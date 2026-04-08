@@ -23,6 +23,24 @@ source .venv/bin/activate
 python3 time_master.py
 ```
 
+If you do not want the widget tied to the current Terminal session, use the bundled launcher instead:
+
+```bash
+cd TimeMaster-Widget
+./start_time_master.command
+```
+
+This runs the widget in the background, so closing Terminal will not close the widget.
+
+To stop it:
+
+```bash
+cd TimeMaster-Widget
+./stop_time_master.command
+```
+
+You can also double-click these `.command` files in Finder on macOS.
+
 ## 3. UI Interactions
 
 - Drag the widget with left click
@@ -70,6 +88,17 @@ Correct usage:
 cd TimeMaster-Widget
 python3 time_master.py
 ```
+
+### Closing Terminal also closes the widget
+
+Use:
+
+```bash
+cd TimeMaster-Widget
+./start_time_master.command
+```
+
+This launcher detaches the widget from the current Terminal session and keeps it running in the background.
 
 ### English layout does not match Chinese exactly
 

@@ -182,5 +182,6 @@ cython_debug/
 
 # Project-local runtime files
 .pyside6_vendor/
+.run/
 time_master_config.py
 time_master.json

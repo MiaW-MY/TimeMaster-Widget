@@ -23,6 +23,24 @@ source .venv/bin/activate
 python3 time_master.py
 ```
 
+如果你不想让挂件依赖当前 Terminal 会话，也可以直接使用项目自带的启动器：
+
+```bash
+cd TimeMaster-Widget
+./start_time_master.command
+```
+
+这样挂件会在后台运行，之后关闭 Terminal 也不会一起退出。
+
+停止时使用：
+
+```bash
+cd TimeMaster-Widget
+./stop_time_master.command
+```
+
+在 macOS Finder 里也可以直接双击这两个 `.command` 文件。
+
 ## 3. 界面操作
 
 - 左键拖动挂件位置
@@ -70,6 +88,17 @@ python3 time_master.py
 cd TimeMaster-Widget
 python3 time_master.py
 ```
+
+### 关闭 Terminal 后挂件也一起退出
+
+请改用：
+
+```bash
+cd TimeMaster-Widget
+./start_time_master.command
+```
+
+这个启动器会把挂件放到后台运行，而不是绑定在当前 Terminal 进程上。
 
 ### 切换语言后布局和中文不完全一样
 

@@ -62,6 +62,24 @@ cd TimeMaster-Widget
 python3 time_master.py
 ```
 
+## Easier Launch On macOS
+
+If you do not want to keep the widget attached to a Terminal session, you can use the bundled launcher files:
+
+```bash
+./start_time_master.command
+```
+
+This starts the widget in the background, writes runtime data into `.run/`, and lets you close Terminal afterward without closing the widget.
+
+To stop it:
+
+```bash
+./stop_time_master.command
+```
+
+You can also double-click `start_time_master.command` and `stop_time_master.command` in Finder.
+
 ## Local Config
 
 The app stores runtime settings in a local `time_master_config.py` file, which is intentionally ignored by Git.
