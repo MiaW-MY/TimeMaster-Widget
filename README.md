@@ -2,6 +2,16 @@
 
 A PySide6-based floating desktop countdown widget for macOS, with bilingual UI, opacity control, custom target date, and cat-themed card styling.
 
+## Screenshots
+
+### Chinese
+
+![Chinese widget screenshot](docs/images/screenshot-zh.png)
+
+### English
+
+![English widget screenshot](docs/images/screenshot-en.png)
+
 ## Quick Start
 
 ```bash
