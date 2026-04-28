@@ -70,7 +70,7 @@ STRINGS = {
         "tap_to_resume": "点击窗口继续",
         "celebration_completed": "本轮{dur}",
         "celebration_praise": "太棒了！",
-        "celebration_today_sub": "今日累计 {today} · 第 {n} 次",
+        "celebration_today_sub": "今日累计 {today}",
         "celebration_tap_hint": "轻触继续",
     },
     "en": {
@@ -119,7 +119,7 @@ STRINGS = {
         "tap_to_resume": "Click to continue",
         "celebration_completed": "Round {dur}",
         "celebration_praise": "Nice work!",
-        "celebration_today_sub": "Today {today} · #{n}",
+        "celebration_today_sub": "Today {today}",
         "celebration_tap_hint": "Tap to continue",
     },
 }
