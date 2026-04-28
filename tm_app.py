@@ -109,13 +109,12 @@ class TimeMasterWidget(QMainWindow):
         self._fb_layout.addWidget(self.focus_interrupt_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.card_layout.addWidget(self.title_label, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.card_layout.addStretch(1)
-        self._idx_stretch_top = 1
         self.card_layout.addWidget(self.focus_body, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.card_layout.addWidget(self.day_row, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.card_layout.addWidget(self.month_row, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.card_layout.addWidget(self.year_row, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.card_layout.addStretch(1)
+        self._idx_stretch_top: int | None = None
         self._idx_stretch_bottom = self.card_layout.count() - 1
 
         self._apply_title_slot_main()
@@ -157,13 +156,25 @@ class TimeMasterWidget(QMainWindow):
         self.card_layout.setAlignment(self.title_label, Qt.AlignmentFlag.AlignHCenter)
 
     def _set_card_vertical_balance(self, centered: bool) -> None:
-        """Main: only bottom stretch grows. Focus/celebration: equal top/bottom flex to center content."""
-        top = getattr(self, "_idx_stretch_top", None)
+        """Main: no top stretch (avoids double layout spacing above first row). Focus/celebration: insert top stretch."""
         bot = getattr(self, "_idx_stretch_bottom", None)
-        if top is None or bot is None:
+        if bot is None:
             return
-        self.card_layout.setStretch(top, 1 if centered else 0)
-        self.card_layout.setStretch(bot, 1)
+        if centered:
+            if self._idx_stretch_top is None:
+                self.card_layout.insertStretch(1, 1)
+                self._idx_stretch_top = 1
+                self._idx_stretch_bottom = self.card_layout.count() - 1
+            self.card_layout.setStretch(self._idx_stretch_top, 1)
+            self.card_layout.setStretch(self._idx_stretch_bottom, 1)
+        else:
+            if self._idx_stretch_top is not None:
+                item = self.card_layout.takeAt(self._idx_stretch_top)
+                if item is not None:
+                    del item
+                self._idx_stretch_top = None
+                self._idx_stretch_bottom = self.card_layout.count() - 1
+            self.card_layout.setStretch(self._idx_stretch_bottom, 1)
 
     def _apply_language_layout(self) -> None:
         layout = LANGUAGE_LAYOUTS.get(self.config.language, LANGUAGE_LAYOUTS["zh"])
@@ -512,6 +523,7 @@ class TimeMasterWidget(QMainWindow):
         self.focus_interrupt_btn.setFixedWidth(BAR_W)
         self._fb_layout.setSpacing(6)
         self._set_card_vertical_balance(False)
+        self.card_layout.setSpacing(4)
         self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignLeft)
         self._fb_layout.setAlignment(self.focus_interrupt_btn, Qt.AlignmentFlag.AlignHCenter)
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
