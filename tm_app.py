@@ -239,6 +239,8 @@ class TimeMasterWidget(QMainWindow):
         self._reset_row_widgets_default()
         self.apply_language()
         QTimer.singleShot(0, self.refresh_rows)
+
+    def _reset_row_widgets_default(self) -> None:
         for row in (self.target_row, self.day_row, self.month_row, self.year_row):
             row.reset_row_style()
             row.setContentsMargins(0, 0, 0, 0)
