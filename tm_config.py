@@ -80,10 +80,13 @@ def _load_config_from_py() -> AppConfig:
 
     target_raw = getattr(module, "TARGET_ISO", "")
     start_raw = getattr(module, "COUNTDOWN_START_ISO", "")
+    target_start_date_raw = getattr(module, "TARGET_START_ISO", "")
     if not isinstance(target_raw, str):
         target_raw = str(target_raw) if target_raw else ""
     if not isinstance(start_raw, str):
         start_raw = str(start_raw) if start_raw else ""
+    if not isinstance(target_start_date_raw, str):
+        target_start_date_raw = str(target_start_date_raw) if target_start_date_raw else ""
 
     language = getattr(module, "LANGUAGE", "zh")
     if language not in STRINGS:
@@ -101,11 +104,19 @@ def _load_config_from_py() -> AppConfig:
         focus_start_raw = str(focus_start_raw) if focus_start_raw else ""
     focus_started = parse_iso_datetime(focus_start_raw) if focus_start_raw.strip() else None
 
+    countdown_start = parse_iso_datetime(start_raw) if start_raw.strip() else None
+    if target_start_date_raw.strip():
+        try:
+            d0 = datetime.strptime(target_start_date_raw.strip(), "%Y-%m-%d")
+            countdown_start = d0.replace(hour=0, minute=0, second=0, microsecond=0)
+        except ValueError:
+            pass
+
     return AppConfig(
         target=parse_iso_datetime(target_raw) if target_raw.strip() else None,
         language=language,
         countdown_mode="day",
-        countdown_start=parse_iso_datetime(start_raw) if start_raw.strip() else None,
+        countdown_start=countdown_start,
         alpha=clamp_alpha(getattr(module, "WIDGET_ALPHA", 0.96)),
         focus_duration_seconds=focus_dur,
         focus_started_at=focus_started,
@@ -134,7 +145,7 @@ def read_config() -> AppConfig:
 
     config = _load_config_from_py()
     if config.target is not None and config.countdown_start is None:
-        config.countdown_start = datetime.now()
+        config.countdown_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         save_config(config)
     if config.focus_duration_seconds > 0 and config.focus_started_at is None:
         config = replace(config, focus_duration_seconds=0)
@@ -150,6 +161,7 @@ def save_config(config: AppConfig) -> None:
         if config.countdown_start
         else ""
     )
+    target_start_date = config.countdown_start.date().isoformat() if config.countdown_start else ""
     focus_start_iso = (
         config.focus_started_at.replace(microsecond=0).isoformat(timespec="seconds")
         if config.focus_started_at
@@ -161,6 +173,7 @@ def save_config(config: AppConfig) -> None:
         'COUNTDOWN_MODE = "day"  # "day" | "hour"\n'
         f"WIDGET_ALPHA = {clamp_alpha(config.alpha):.2f}\n"
         f'TARGET_ISO = "{target_iso}"\n'
+        f'TARGET_START_ISO = "{target_start_date}"  # YYYY-MM-DD, start of target window\n'
         f'COUNTDOWN_START_ISO = "{start_iso}"\n'
         f"FOCUS_DURATION_SECONDS = {max(0, int(config.focus_duration_seconds))}\n"
         f'FOCUS_STARTED_ISO = "{focus_start_iso}"\n',

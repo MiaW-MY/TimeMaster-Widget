@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QSlider,
-    QTabWidget,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -220,138 +219,82 @@ class ClickToResumeOverlay(QFrame):
         super().mousePressEvent(event)
 
 
-class SettingsDialog(QDialog):
-    settings_applied = Signal(AppConfig)
+_DIALOG_FORM_STYLE = f"""
+    QDialog {{
+        background: {COL['card']};
+        color: {COL['text']};
+        border-radius: 16px;
+    }}
+    QLabel {{
+        color: {COL['muted']};
+    }}
+    QLineEdit {{
+        background: {COL['surface']};
+        color: {COL['text']};
+        border: none;
+        padding: 6px 8px;
+        border-radius: 8px;
+    }}
+    QComboBox {{
+        background: {COL['surface']};
+        color: {COL['text']};
+        border: none;
+        padding: 6px 8px;
+        border-radius: 8px;
+    }}
+    QPushButton {{
+        background: {COL['surface']};
+        color: {COL['text']};
+        border: none;
+        padding: 8px 14px;
+        border-radius: 10px;
+    }}
+    QSlider::groove:horizontal {{
+        background: {COL['surface']};
+        height: 6px;
+        border-radius: 3px;
+    }}
+    QSlider::handle:horizontal {{
+        background: {COL['accent']};
+        width: 14px;
+        margin: -5px 0;
+        border-radius: 7px;
+    }}
+"""
+
+
+class TargetDatesDialog(QDialog):
+    applied = Signal(AppConfig)
 
     def __init__(self, config: AppConfig, strings: dict[str, str], parent: QWidget | None = None):
         super().__init__(parent)
         self._base_config = config
         self._strings = strings
-        self.setWindowTitle(strings["dlg_title"])
+        self.setWindowTitle(strings["dlg_target_title"])
         self.setModal(True)
-        self.setStyleSheet(
-            f"""
-            QDialog {{
-                background: {COL['card']};
-                color: {COL['text']};
-                border-radius: 16px;
-            }}
-            QLabel {{
-                color: {COL['muted']};
-            }}
-            QLineEdit {{
-                background: {COL['surface']};
-                color: {COL['text']};
-                border: none;
-                padding: 6px 8px;
-                border-radius: 8px;
-            }}
-            QComboBox {{
-                background: {COL['surface']};
-                color: {COL['text']};
-                border: none;
-                padding: 6px 8px;
-                border-radius: 8px;
-            }}
-            QPushButton {{
-                background: {COL['surface']};
-                color: {COL['text']};
-                border: none;
-                padding: 8px 14px;
-                border-radius: 10px;
-            }}
-            QSlider::groove:horizontal {{
-                background: {COL['surface']};
-                height: 6px;
-                border-radius: 3px;
-            }}
-            QSlider::handle:horizontal {{
-                background: {COL['accent']};
-                width: 14px;
-                margin: -5px 0;
-                border-radius: 7px;
-            }}
-            QTabWidget::pane {{
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 10px;
-                padding: 10px;
-                top: -1px;
-                background: {COL['surface']};
-            }}
-            QTabBar::tab {{
-                background: {COL['card']};
-                color: {COL['muted']};
-                padding: 8px 14px;
-                margin-right: 4px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-            }}
-            QTabBar::tab:selected {{
-                background: {COL['surface']};
-                color: {COL['text']};
-            }}
-            """
-        )
+        self.setStyleSheet(_DIALOG_FORM_STYLE)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(10)
 
-        tabs = QTabWidget()
-        tabs.setDocumentMode(True)
-
-        page_cd = QWidget()
-        lay_cd = QVBoxLayout(page_cd)
-        lay_cd.setContentsMargins(4, 8, 4, 4)
-        lay_cd.setSpacing(8)
-        date_label = QLabel(strings["dlg_date"])
-        date_label.setFont(QFont("Helvetica Neue", 11))
-        lay_cd.addWidget(date_label)
-        self.date_edit = QLineEdit()
         now = datetime.now()
-        self.date_edit.setText(config.target.strftime("%Y-%m-%d") if config.target else now.strftime("%Y-%m-%d"))
-        lay_cd.addWidget(self.date_edit)
-        lay_cd.addStretch(1)
-        tabs.addTab(page_cd, strings["dlg_tab_countdown"])
+        start_d = config.countdown_start.date() if config.countdown_start else now.date()
+        end_d = config.target.date() if config.target else now.date()
 
-        page_focus = QWidget()
-        lay_f = QVBoxLayout(page_focus)
-        lay_f.setContentsMargins(4, 8, 4, 4)
-        lay_f.setSpacing(8)
-        focus_label = QLabel(strings["dlg_focus"])
-        focus_label.setFont(QFont("Helvetica Neue", 11))
-        lay_f.addWidget(focus_label)
-        focus_row = QHBoxLayout()
-        self.focus_edit = QLineEdit()
-        self.focus_edit.setPlaceholderText("25")
-        focus_row.addWidget(self.focus_edit, stretch=1)
-        self.focus_unit = QComboBox()
-        self.focus_unit.addItem(strings["dlg_focus_unit_min"], "min")
-        self.focus_unit.addItem(strings["dlg_focus_unit_hr"], "hr")
-        focus_row.addWidget(self.focus_unit)
-        lay_f.addLayout(focus_row)
-        hint = QLabel(strings["dlg_focus_hint"])
-        hint.setFont(QFont("Helvetica Neue", 9))
-        hint.setWordWrap(True)
-        lay_f.addWidget(hint)
-        lay_f.addStretch(1)
-        tabs.addTab(page_focus, strings["dlg_tab_focus"])
+        ls = QLabel(strings["dlg_start_date"])
+        ls.setFont(QFont("Helvetica Neue", 11))
+        layout.addWidget(ls)
+        self.start_edit = QLineEdit()
+        self.start_edit.setText(start_d.strftime("%Y-%m-%d"))
+        layout.addWidget(self.start_edit)
 
-        page_app = QWidget()
-        lay_a = QVBoxLayout(page_app)
-        lay_a.setContentsMargins(4, 8, 4, 4)
-        lay_a.setSpacing(8)
-        alpha_label = QLabel(strings["dlg_alpha"])
-        alpha_label.setFont(QFont("Helvetica Neue", 11))
-        lay_a.addWidget(alpha_label)
-        self.alpha_slider = QSlider(Qt.Orientation.Horizontal)
-        self.alpha_slider.setRange(35, 100)
-        self.alpha_slider.setValue(int(config.alpha * 100))
-        lay_a.addWidget(self.alpha_slider)
-        lay_a.addStretch(1)
-        tabs.addTab(page_app, strings["dlg_tab_appearance"])
-
-        layout.addWidget(tabs)
+        le = QLabel(strings["dlg_end_date"])
+        le.setFont(QFont("Helvetica Neue", 11))
+        layout.addWidget(le)
+        self.end_edit = QLineEdit()
+        self.end_edit.setText(end_d.strftime("%Y-%m-%d"))
+        layout.addWidget(self.end_edit)
 
         self.error_label = QLabel("")
         self.error_label.setStyleSheet(f"color: {COL['error']};")
@@ -360,17 +303,78 @@ class SettingsDialog(QDialog):
 
         save_btn = QPushButton(strings["dlg_ok"])
         save_btn.setFont(QFont("Helvetica Neue", 11, QFont.Weight.Bold))
-        save_btn.clicked.connect(self.apply)
+        save_btn.clicked.connect(self._apply)
         layout.addWidget(save_btn)
 
-    def apply(self) -> None:
-        date_str = self.date_edit.text().strip()
+    def _apply(self) -> None:
         try:
-            day = datetime.strptime(date_str, "%Y-%m-%d")
+            start_day = datetime.strptime(self.start_edit.text().strip(), "%Y-%m-%d")
+            end_day = datetime.strptime(self.end_edit.text().strip(), "%Y-%m-%d")
         except ValueError:
             self.error_label.setText(self._strings["dlg_err_date"])
             return
+        if start_day.date() > end_day.date():
+            self.error_label.setText(self._strings["dlg_err_range"])
+            return
+        target_end = end_day.replace(hour=23, minute=59, second=59, microsecond=0)
+        range_start = start_day.replace(hour=0, minute=0, second=0, microsecond=0)
+        self.applied.emit(
+            AppConfig(
+                target=target_end,
+                language=self._base_config.language,
+                countdown_mode="day",
+                countdown_start=range_start,
+                alpha=self._base_config.alpha,
+                focus_duration_seconds=self._base_config.focus_duration_seconds,
+                focus_started_at=self._base_config.focus_started_at,
+            )
+        )
+        self.accept()
 
+
+class FocusOnlyDialog(QDialog):
+    applied = Signal(AppConfig)
+
+    def __init__(self, config: AppConfig, strings: dict[str, str], parent: QWidget | None = None):
+        super().__init__(parent)
+        self._base_config = config
+        self._strings = strings
+        self.setWindowTitle(strings["dlg_focus_title"])
+        self.setModal(True)
+        self.setStyleSheet(_DIALOG_FORM_STYLE)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(10)
+
+        focus_label = QLabel(strings["dlg_focus"])
+        focus_label.setFont(QFont("Helvetica Neue", 11))
+        layout.addWidget(focus_label)
+        focus_row = QHBoxLayout()
+        self.focus_edit = QLineEdit()
+        self.focus_edit.setPlaceholderText("25")
+        focus_row.addWidget(self.focus_edit, stretch=1)
+        self.focus_unit = QComboBox()
+        self.focus_unit.addItem(strings["dlg_focus_unit_min"], "min")
+        self.focus_unit.addItem(strings["dlg_focus_unit_hr"], "hr")
+        focus_row.addWidget(self.focus_unit)
+        layout.addLayout(focus_row)
+        hint = QLabel(strings["dlg_focus_hint"])
+        hint.setFont(QFont("Helvetica Neue", 9))
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+
+        self.error_label = QLabel("")
+        self.error_label.setStyleSheet(f"color: {COL['error']};")
+        self.error_label.setFont(QFont("Helvetica Neue", 10))
+        layout.addWidget(self.error_label)
+
+        save_btn = QPushButton(strings["dlg_ok"])
+        save_btn.setFont(QFont("Helvetica Neue", 11, QFont.Weight.Bold))
+        save_btn.clicked.connect(self._apply)
+        layout.addWidget(save_btn)
+
+    def _apply(self) -> None:
         focus_dur = self._base_config.focus_duration_seconds
         focus_started = self._base_config.focus_started_at
         raw_focus = self.focus_edit.text().strip()
@@ -391,15 +395,58 @@ class SettingsDialog(QDialog):
             focus_dur = seconds
             focus_started = datetime.now()
 
-        self.settings_applied.emit(
+        self.applied.emit(
             AppConfig(
-                target=day.replace(hour=23, minute=59, second=59, microsecond=0),
+                target=self._base_config.target,
                 language=self._base_config.language,
                 countdown_mode="day",
-                countdown_start=datetime.now(),
-                alpha=clamp_alpha(self.alpha_slider.value() / 100),
+                countdown_start=self._base_config.countdown_start,
+                alpha=self._base_config.alpha,
                 focus_duration_seconds=focus_dur,
                 focus_started_at=focus_started,
+            )
+        )
+        self.accept()
+
+
+class AppearanceOnlyDialog(QDialog):
+    applied = Signal(AppConfig)
+
+    def __init__(self, config: AppConfig, strings: dict[str, str], parent: QWidget | None = None):
+        super().__init__(parent)
+        self._base_config = config
+        self._strings = strings
+        self.setWindowTitle(strings["dlg_appearance_title"])
+        self.setModal(True)
+        self.setStyleSheet(_DIALOG_FORM_STYLE)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(10)
+
+        alpha_label = QLabel(strings["dlg_alpha"])
+        alpha_label.setFont(QFont("Helvetica Neue", 11))
+        layout.addWidget(alpha_label)
+        self.alpha_slider = QSlider(Qt.Orientation.Horizontal)
+        self.alpha_slider.setRange(35, 100)
+        self.alpha_slider.setValue(int(config.alpha * 100))
+        layout.addWidget(self.alpha_slider)
+
+        save_btn = QPushButton(strings["dlg_ok"])
+        save_btn.setFont(QFont("Helvetica Neue", 11, QFont.Weight.Bold))
+        save_btn.clicked.connect(self._apply)
+        layout.addWidget(save_btn)
+
+    def _apply(self) -> None:
+        self.applied.emit(
+            AppConfig(
+                target=self._base_config.target,
+                language=self._base_config.language,
+                countdown_mode="day",
+                countdown_start=self._base_config.countdown_start,
+                alpha=clamp_alpha(self.alpha_slider.value() / 100),
+                focus_duration_seconds=self._base_config.focus_duration_seconds,
+                focus_started_at=self._base_config.focus_started_at,
             )
         )
         self.accept()

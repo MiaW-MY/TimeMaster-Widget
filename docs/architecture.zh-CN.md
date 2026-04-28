@@ -49,7 +49,7 @@ UI 组件层。
 
 - `ProgressBar`：自定义进度条绘制
 - `RowWidget`：每一条文字 + 进度条组合
-- `SettingsDialog`：设置弹窗（含专注时长）
+- `TargetDatesDialog`、`FocusOnlyDialog`、`AppearanceOnlyDialog`：目标日期区间、专注时长、透明度弹窗
 - `StatsDialog`：专注统计独立窗口
 - `FireworksOverlay`：专注完成后的短暂烟花动画层
 - `CardFrame`：卡片背景与装饰图绘制
@@ -61,7 +61,7 @@ UI 组件层。
 - 单行排版
 - 卡片背景绘制
 - 猫咪图片显示方式
-- 设置弹窗样式
+- 弹窗样式
 
 优先看这个文件。
 

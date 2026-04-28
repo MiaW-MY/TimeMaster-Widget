@@ -47,7 +47,7 @@ Responsibilities:
 
 - `ProgressBar`: custom bar rendering
 - `RowWidget`: one label + one bar
-- `SettingsDialog`: settings dialog (including focus duration)
+- `TargetDatesDialog`, `FocusOnlyDialog`, `AppearanceOnlyDialog`: target date range, focus duration, and opacity dialogs
 - `StatsDialog`: standalone focus statistics window
 - `FireworksOverlay`: short fireworks animation layer after a completed focus session
 - `CardFrame`: rounded card and decorative image painting
@@ -59,7 +59,7 @@ Use this file when you want to change:
 - Row layout
 - Card rendering
 - Cat asset rendering
-- Settings dialog styling
+- Dialog styling
 
 ### `tm_config.py`
 

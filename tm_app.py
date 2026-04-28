@@ -9,7 +9,15 @@ from PySide6.QtWidgets import QApplication, QGraphicsDropShadowEffect, QMainWind
 
 from tm_config import AppConfig, day_stats_for, load_focus_stats, read_config, record_focus_completion, save_config
 from tm_resources import ASSET_MASCOT, ASSET_MASCOT_FALLBACK, CARD_H, CARD_W, COL, LANGUAGE_LAYOUTS, STRINGS
-from tm_ui import CardFrame, RowWidget, SettingsDialog, StatsDialog, load_pixmap
+from tm_ui import (
+    AppearanceOnlyDialog,
+    CardFrame,
+    FocusOnlyDialog,
+    RowWidget,
+    StatsDialog,
+    TargetDatesDialog,
+    load_pixmap,
+)
 
 
 class TimeMasterWidget(QMainWindow):
@@ -112,9 +120,19 @@ class TimeMasterWidget(QMainWindow):
         self.apply_language()
         self.refresh_rows()
 
-    def open_settings_dialog(self) -> None:
-        dialog = SettingsDialog(self.config, self.strings(), self)
-        dialog.settings_applied.connect(self.apply_settings)
+    def open_target_dialog(self) -> None:
+        dialog = TargetDatesDialog(self.config, self.strings(), self)
+        dialog.applied.connect(self.apply_settings)
+        dialog.exec()
+
+    def open_focus_dialog(self) -> None:
+        dialog = FocusOnlyDialog(self.config, self.strings(), self)
+        dialog.applied.connect(self.apply_settings)
+        dialog.exec()
+
+    def open_appearance_dialog(self) -> None:
+        dialog = AppearanceOnlyDialog(self.config, self.strings(), self)
+        dialog.applied.connect(self.apply_settings)
         dialog.exec()
 
     def open_stats_dialog(self) -> None:
@@ -305,9 +323,17 @@ class TimeMasterWidget(QMainWindow):
             }}
             """
         )
-        settings_action = QAction(self.t("menu_settings"), self)
-        settings_action.triggered.connect(self.open_settings_dialog)
-        menu.addAction(settings_action)
+        target_action = QAction(self.t("menu_target"), self)
+        target_action.triggered.connect(self.open_target_dialog)
+        menu.addAction(target_action)
+
+        focus_menu_action = QAction(self.t("menu_focus"), self)
+        focus_menu_action.triggered.connect(self.open_focus_dialog)
+        menu.addAction(focus_menu_action)
+
+        appearance_action = QAction(self.t("menu_appearance"), self)
+        appearance_action.triggered.connect(self.open_appearance_dialog)
+        menu.addAction(appearance_action)
 
         stats_action = QAction(self.t("menu_stats"), self)
         stats_action.triggered.connect(self.open_stats_dialog)
@@ -333,7 +359,7 @@ class TimeMasterWidget(QMainWindow):
         if self._post_focus_celebration:
             return
         if event.button() == Qt.MouseButton.LeftButton:
-            self.open_settings_dialog()
+            self.open_target_dialog()
         super().mouseDoubleClickEvent(event)
 
     def mousePressEvent(self, event) -> None:  # noqa: N802
