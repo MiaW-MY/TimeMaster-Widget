@@ -6,7 +6,7 @@ ASSET_MASCOT_FALLBACK = PROJECT_ROOT / "assets" / "mascot.png"
 CARD_W = 173
 CARD_H = 173
 CARD_RADIUS = 25
-CARD_CONTENT_W = CARD_W - 14
+CARD_CONTENT_W = CARD_W - 28
 BAR_W = 110
 BAR_H = 5
 
@@ -35,7 +35,7 @@ STRINGS = {
         "day_row": "今日剩余 {hms}",
         "month_row": "本月剩余 {n} 天",
         "year_row": "本年剩余 {n} 天",
-        "focus_row": "专注剩余 {hms}",
+        "focus_row": "专注剩余 {rem}",
         "focus_today": "今日已专注 {dur}",
         "focus_interrupt": "中断专注",
         "menu_target": "目标…",
@@ -84,7 +84,7 @@ STRINGS = {
         "day_row": "Today {hms} left",
         "month_row": "{n} days left this month",
         "year_row": "{n} days left this year",
-        "focus_row": "Focus {hms} left",
+        "focus_row": "{rem} left",
         "focus_today": "Today focused {dur}",
         "focus_interrupt": "Stop focus",
         "menu_target": "Target…",

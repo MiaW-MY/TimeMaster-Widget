@@ -109,13 +109,17 @@ class TimeMasterWidget(QMainWindow):
         self._fb_layout.addWidget(self.focus_interrupt_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.card_layout.addWidget(self.title_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.card_layout.addStretch(1)
+        self._idx_stretch_top = 1
         self.card_layout.addWidget(self.focus_body, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.card_layout.addWidget(self.day_row, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.card_layout.addWidget(self.month_row, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.card_layout.addWidget(self.year_row, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.card_layout.addStretch(1)
+        self._idx_stretch_bottom = self.card_layout.count() - 1
 
         self._apply_title_slot_main()
+        self._set_card_vertical_balance(False)
 
         outer_layout.addWidget(self.card)
         self.setCentralWidget(outer)
@@ -140,10 +144,26 @@ class TimeMasterWidget(QMainWindow):
         label.setContentsMargins(0, 0, 0, 0)
         return label
 
-    def _apply_title_slot_main(self) -> None:
-        self.title_label.setFixedWidth(BAR_W)
-        self.title_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+    def _apply_title_slot_main(self, *, special: bool | None = None) -> None:
+        if special is None:
+            now = datetime.now()
+            special = self._post_focus_celebration or self._focus_active(now)
+        if special:
+            self.title_label.setFixedWidth(CARD_CONTENT_W)
+            self.title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        else:
+            self.title_label.setFixedWidth(BAR_W)
+            self.title_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.card_layout.setAlignment(self.title_label, Qt.AlignmentFlag.AlignHCenter)
+
+    def _set_card_vertical_balance(self, centered: bool) -> None:
+        """Main: only bottom stretch grows. Focus/celebration: equal top/bottom flex to center content."""
+        top = getattr(self, "_idx_stretch_top", None)
+        bot = getattr(self, "_idx_stretch_bottom", None)
+        if top is None or bot is None:
+            return
+        self.card_layout.setStretch(top, 1 if centered else 0)
+        self.card_layout.setStretch(bot, 1)
 
     def _apply_language_layout(self) -> None:
         layout = LANGUAGE_LAYOUTS.get(self.config.language, LANGUAGE_LAYOUTS["zh"])
@@ -275,6 +295,7 @@ class TimeMasterWidget(QMainWindow):
         self.focus_interrupt_btn.setVisible(False)
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
         self._apply_title_slot_main()
+        self._set_card_vertical_balance(True)
         self.card_layout.setSpacing(2)
         text_w = CARD_CONTENT_W
         self.focus_body.setFixedWidth(text_w)
@@ -326,6 +347,36 @@ class TimeMasterWidget(QMainWindow):
             w.raise_()
         self.card.tap_gate.raise_()
         self.card.tap_gate.update_pick_hint_geometry()
+
+    def _format_focus_remaining(self, left_sec: int) -> str:
+        lh, lr = divmod(int(left_sec), 3600)
+        lm, ls = divmod(lr, 60)
+        if self.config.language == "zh":
+            if lh > 0:
+                if lm > 0:
+                    return f"{lh}小时{lm}分"
+                if ls > 0:
+                    return f"{lh}小时{ls}秒"
+                return f"{lh}小时"
+            if lm > 0:
+                return f"{lm}分钟" if ls == 0 else f"{lm}分{ls}秒"
+            return f"{ls}秒"
+        if lh > 0:
+            hp = "hr" if lh == 1 else "hrs"
+            if lm > 0:
+                mp = "min" if lm == 1 else "mins"
+                return f"{lh} {hp} {lm} {mp}"
+            if ls > 0:
+                sp = "sec" if ls == 1 else "secs"
+                return f"{lh} {hp} {ls} {sp}"
+            return f"{lh} {hp}"
+        if lm > 0:
+            mp = "min" if lm == 1 else "mins"
+            if ls == 0:
+                return f"{lm} {mp}"
+            sp = "sec" if ls == 1 else "secs"
+            return f"{lm} {mp} {ls} {sp}"
+        return f"{ls} sec" if ls == 1 else f"{ls} secs"
 
     def _format_session_duration_celebration(self, seconds: int) -> str:
         """Session line under 「已完成」: 本轮 25分钟 / This round 25 mins; includes hours."""
@@ -427,9 +478,7 @@ class TimeMasterWidget(QMainWindow):
             if end is None:
                 return
             left_sec = max(0, int((end - now).total_seconds()))
-            lh, lr = divmod(left_sec, 3600)
-            lm, ls = divmod(lr, 60)
-            hms = f"{lh:02d}:{lm:02d}:{ls:02d}" if lh > 0 else f"{lm:02d}:{ls:02d}"
+            rem = self._format_focus_remaining(left_sec)
             started = self.config.focus_started_at
             if started is None:
                 return
@@ -444,12 +493,13 @@ class TimeMasterWidget(QMainWindow):
 
             self.target_row.reset_row_style()
             self.target_row.set_label_point_size(15)
-            self.target_row.set_row(self.t("focus_row", hms=hms), prog)
+            self.target_row.set_row(self.t("focus_row", rem=rem), prog)
 
             cw = CARD_CONTENT_W
             self.focus_body.setFixedWidth(cw)
             self.target_row.set_text_column_width(cw)
             self.focus_interrupt_btn.setFixedWidth(cw)
+            self._set_card_vertical_balance(True)
             self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignHCenter)
             self._fb_layout.setAlignment(self.focus_interrupt_btn, Qt.AlignmentFlag.AlignHCenter)
             self.target_row.set_label_text_alignment(Qt.AlignmentFlag.AlignHCenter)
@@ -457,6 +507,7 @@ class TimeMasterWidget(QMainWindow):
 
         self.focus_body.setFixedWidth(BAR_W)
         self.focus_interrupt_btn.setFixedWidth(BAR_W)
+        self._set_card_vertical_balance(False)
         self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignLeft)
         self._fb_layout.setAlignment(self.focus_interrupt_btn, Qt.AlignmentFlag.AlignHCenter)
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
