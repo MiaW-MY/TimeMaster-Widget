@@ -75,9 +75,16 @@ class RowWidget(QWidget):
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         self.bar = ProgressBar(BAR_W, BAR_H)
+        self._bar_row = QWidget()
+        self._bar_h = QHBoxLayout(self._bar_row)
+        self._bar_h.setContentsMargins(0, 0, 0, 0)
+        self._bar_h.setSpacing(0)
+        self._bar_h.addStretch(1)
+        self._bar_h.addWidget(self.bar, alignment=Qt.AlignmentFlag.AlignVCenter)
+        self._bar_h.addStretch(1)
         self.setFixedWidth(BAR_W)
         layout.addWidget(self.label)
-        layout.addWidget(self.bar)
+        layout.addWidget(self._bar_row)
 
     def set_row(self, text: str, value: float) -> None:
         self.label.setText(text)
@@ -111,19 +118,25 @@ class RowWidget(QWidget):
 
     def set_bar_visible(self, visible: bool) -> None:
         self.bar.setVisible(visible)
+        self._bar_row.setVisible(visible)
 
     def set_text_column_width(self, width: int | None) -> None:
-        """None: default narrow column (BAR_W). Int: use almost full card width for wrapped celebration text."""
+        """None: default narrow column (BAR_W). Int: label uses full width; bar stays BAR_W when column is wider."""
         if width is None:
             self.setFixedWidth(BAR_W)
             self.label.setMinimumWidth(0)
             self.label.setMaximumWidth(16777215)
             self.bar.setFixedSize(BAR_W, BAR_H)
+            self._bar_row.setMinimumWidth(0)
+            self._bar_row.setMaximumWidth(16777215)
             return
         self.setFixedWidth(width)
         self.label.setMinimumWidth(width)
         self.label.setMaximumWidth(width)
-        self.bar.setFixedSize(width, BAR_H)
+        bar_w = BAR_W if width > BAR_W else width
+        self.bar.setFixedSize(bar_w, BAR_H)
+        self._bar_row.setMinimumWidth(width)
+        self._bar_row.setMaximumWidth(width)
 
 
 class FireworksOverlay(QWidget):
