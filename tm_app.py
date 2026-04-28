@@ -19,6 +19,9 @@ class TimeMasterWidget(QMainWindow):
         self.drag_origin: QPoint | None = None
         self.drag_window_origin: QPoint | None = None
 
+        self._post_focus_celebration = False
+        self._celebration_session_sec = 0
+
         self.top_mascot = load_pixmap((ASSET_MASCOT, ASSET_MASCOT_FALLBACK), 31)
 
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
@@ -60,11 +63,8 @@ class TimeMasterWidget(QMainWindow):
         outer_layout.addWidget(self.card)
         self.setCentralWidget(outer)
 
-        self._expect_tap_after_fireworks = False
-        self._awaiting_click_after_fireworks = False
         self.card.tap_gate.hide()
-        self.card.fireworks.animation_finished.connect(self._on_fireworks_finished)
-        self.card.tap_gate.clicked.connect(self._on_tap_gate_clicked)
+        self.card.fireworks.frozen_clicked.connect(self._exit_focus_celebration)
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh_rows)
@@ -96,7 +96,13 @@ class TimeMasterWidget(QMainWindow):
 
     def apply_language(self) -> None:
         self._apply_language_layout()
-        self.title_label.setText(self.t("title_focus") if self._focus_active(datetime.now()) else self.t("title"))
+        now = datetime.now()
+        if self._post_focus_celebration:
+            self.title_label.setText(self.t("title_completed"))
+        elif self._focus_active(now):
+            self.title_label.setText(self.t("title_focus"))
+        else:
+            self.title_label.setText(self.t("title"))
 
     def set_language(self, language: str) -> None:
         if language not in STRINGS:
@@ -114,18 +120,10 @@ class TimeMasterWidget(QMainWindow):
     def open_stats_dialog(self) -> None:
         StatsDialog(self.strings(), self).exec()
 
-    def _on_fireworks_finished(self) -> None:
-        if not self._expect_tap_after_fireworks:
-            return
-        self._expect_tap_after_fireworks = False
-        self._awaiting_click_after_fireworks = True
-        self.card.tap_gate.set_message(self.t("tap_to_resume"))
-        self.card.tap_gate.show()
-        self.card.tap_gate.raise_()
-
-    def _on_tap_gate_clicked(self) -> None:
-        self.card.tap_gate.hide()
-        self._awaiting_click_after_fireworks = False
+    def _exit_focus_celebration(self) -> None:
+        self._post_focus_celebration = False
+        self._celebration_session_sec = 0
+        self.apply_language()
         self.refresh_rows()
 
     def apply_settings(self, new_config: AppConfig) -> None:
@@ -155,10 +153,27 @@ class TimeMasterWidget(QMainWindow):
             return
         dur = self.config.focus_duration_seconds
         record_focus_completion(dur)
+        self._celebration_session_sec = int(dur)
         self.config = replace(self.config, focus_duration_seconds=0, focus_started_at=None)
         save_config(self.config)
-        self._expect_tap_after_fireworks = True
-        self.card.fireworks.start_animation()
+        self._post_focus_celebration = True
+        self.card.fireworks.start_animation(freeze_on_end=True)
+
+    def _render_celebration(self, now: datetime) -> None:
+        self.title_label.setText(self.t("title_completed"))
+        session_txt = self._format_short_duration(self._celebration_session_sec)
+        stats = load_focus_stats()
+        today_key = now.date().isoformat()
+        ent = day_stats_for(stats, today_key)
+        today_sec = int(ent.get("seconds", 0))
+        n = int(ent.get("count", 0))
+        today_txt = self._format_short_duration(today_sec)
+        self.target_row.set_row(self.t("celebration_line1", session=session_txt, today=today_txt, n=n), 1.0)
+        self.day_row.set_row(self.t("celebration_encourage"), 0.0)
+        self.month_row.setVisible(False)
+        self.year_row.setVisible(False)
+        if self.card.fireworks.isVisible():
+            self.card.fireworks.raise_()
 
     def _format_short_duration(self, seconds: int) -> str:
         if seconds <= 0:
@@ -215,10 +230,15 @@ class TimeMasterWidget(QMainWindow):
         return max(0.0, min(1.0, elapsed / total))
 
     def refresh_rows(self) -> None:
-        if self._awaiting_click_after_fireworks:
-            return
         now = datetime.now()
+        if self._post_focus_celebration:
+            self._render_celebration(now)
+            return
+
         self._maybe_complete_focus(now)
+        if self._post_focus_celebration:
+            self._render_celebration(now)
+            return
 
         if self._focus_active(now):
             self.title_label.setText(self.t("title_focus"))
@@ -310,11 +330,15 @@ class TimeMasterWidget(QMainWindow):
         menu.exec(event.globalPos())
 
     def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802
+        if self._post_focus_celebration:
+            return
         if event.button() == Qt.MouseButton.LeftButton:
             self.open_settings_dialog()
         super().mouseDoubleClickEvent(event)
 
     def mousePressEvent(self, event) -> None:  # noqa: N802
+        if self._post_focus_celebration:
+            return
         if event.button() == Qt.MouseButton.LeftButton:
             self.drag_origin = event.globalPosition().toPoint()
             self.drag_window_origin = self.frameGeometry().topLeft()

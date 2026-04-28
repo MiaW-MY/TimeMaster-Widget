@@ -27,6 +27,7 @@ STRINGS = {
     "zh": {
         "title": "时间大师",
         "title_focus": "专注中",
+        "title_completed": "已完成",
         "target_hint": "目标剩余 右键/双击设置",
         "target_done": "目标剩余 已到时间",
         "target_days": "目标剩余 {d} 天",
@@ -60,6 +61,8 @@ STRINGS = {
         "stats_total_count": "合计次数",
         "stats_close": "关闭",
         "tap_to_resume": "点击窗口继续",
+        "celebration_line1": "本轮 {session} · 今日累计 {today} · 第 {n} 次",
+        "celebration_encourage": "继续加油，点一下继续",
         "dlg_tab_countdown": "倒计时",
         "dlg_tab_focus": "专注",
         "dlg_tab_appearance": "外观",
@@ -67,6 +70,7 @@ STRINGS = {
     "en": {
         "title": "Time Master",
         "title_focus": "Focus",
+        "title_completed": "Done",
         "target_hint": "Target Right-click/double-click to set",
         "target_done": "Target Done",
         "target_days": "Target {d} days",
@@ -100,6 +104,8 @@ STRINGS = {
         "stats_total_count": "Total sessions",
         "stats_close": "Close",
         "tap_to_resume": "Click to continue",
+        "celebration_line1": "Session {session} · Today {today} · #{n}",
+        "celebration_encourage": "Nice work — tap to continue",
         "dlg_tab_countdown": "Countdown",
         "dlg_tab_focus": "Focus",
         "dlg_tab_appearance": "Appearance",

@@ -84,6 +84,7 @@ class RowWidget(QWidget):
 
 class FireworksOverlay(QWidget):
     animation_finished = Signal()
+    frozen_clicked = Signal()
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
@@ -93,9 +94,14 @@ class FireworksOverlay(QWidget):
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._tick)
         self._remaining = 0
+        self._frozen = False
+        self._freeze_on_end = False
 
-    def start_animation(self, duration_ms: int = 2600) -> None:
+    def start_animation(self, duration_ms: int = 2600, *, freeze_on_end: bool = False) -> None:
+        self._frozen = False
+        self._freeze_on_end = freeze_on_end
         self._particles = []
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         w, h = self.width(), self.height()
         if w <= 0 or h <= 0:
             return
@@ -128,6 +134,8 @@ class FireworksOverlay(QWidget):
         self.raise_()
 
     def _tick(self) -> None:
+        if self._frozen:
+            return
         self._remaining -= 1
         for p in self._particles:
             p["x"] += p["vx"]
@@ -137,18 +145,40 @@ class FireworksOverlay(QWidget):
         self.update()
         if self._remaining <= 0:
             self._timer.stop()
+            if self._freeze_on_end:
+                self._frozen = True
+                for p in self._particles:
+                    p["life"] = max(float(p["life"]), 0.38)
+                self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+                self.update()
+                self.animation_finished.emit()
+            else:
+                self.hide()
+                self.animation_finished.emit()
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802
+        if self._frozen and event.button() == Qt.MouseButton.LeftButton:
+            self._frozen = False
+            self._freeze_on_end = False
+            self._particles = []
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
             self.hide()
-            self.animation_finished.emit()
+            self.frozen_clicked.emit()
+            return
+        super().mousePressEvent(event)
 
     def paintEvent(self, event) -> None:  # noqa: N802
         _ = event
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         for p in self._particles:
-            if p["life"] <= 0:
+            if not self._frozen and p["life"] <= 0:
+                continue
+            life = max(float(p["life"]), 0.34) if self._frozen else float(p["life"])
+            if not self._frozen and life <= 0:
                 continue
             c: QColor = p["color"]
-            c = QColor(c.red(), c.green(), c.blue(), int(max(0, min(255, p["life"] * 220))))
+            c = QColor(c.red(), c.green(), c.blue(), int(max(0, min(255, life * 220))))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(c)
             r = p["r"]
