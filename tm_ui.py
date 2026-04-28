@@ -63,6 +63,8 @@ class ProgressBar(QWidget):
 
 
 class RowWidget(QWidget):
+    _default_label_pt = 11
+
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
@@ -70,7 +72,7 @@ class RowWidget(QWidget):
         layout.setSpacing(2)
         self.label = QLabel()
         self.label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
-        self.label.setFont(QFont("Helvetica Neue", 11))
+        self.label.setFont(QFont("Helvetica Neue", self._default_label_pt))
         self.bar = ProgressBar(BAR_W, BAR_H)
         self.setFixedWidth(BAR_W)
         layout.addWidget(self.label)
@@ -79,6 +81,21 @@ class RowWidget(QWidget):
     def set_row(self, text: str, value: float) -> None:
         self.label.setText(text)
         self.bar.set_value(value)
+
+    def reset_row_style(self) -> None:
+        self.label.setFont(QFont("Helvetica Neue", self._default_label_pt))
+        self.label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
+        self.bar.setVisible(True)
+
+    def set_label_point_size(self, pt: int) -> None:
+        self.label.setFont(QFont("Helvetica Neue", pt))
+
+    def set_label_muted(self, muted: bool) -> None:
+        color = COL["muted"] if muted else COL["text"]
+        self.label.setStyleSheet(f"color: {color}; background: transparent;")
+
+    def set_bar_visible(self, visible: bool) -> None:
+        self.bar.setVisible(visible)
 
 
 class FireworksOverlay(QWidget):
@@ -93,6 +110,8 @@ class FireworksOverlay(QWidget):
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._tick)
         self._remaining = 0
+        self._initial_ticks = 0
+        self._freeze_peak_threshold = 0
         self._frozen = False
         self._freeze_on_end = False
 
@@ -127,7 +146,10 @@ class FireworksOverlay(QWidget):
                     "r": random.uniform(1.6, 3.2),
                 }
             )
-        self._remaining = max(1, duration_ms // 35)
+        self._initial_ticks = max(1, duration_ms // 35)
+        self._remaining = self._initial_ticks
+        # Freeze while particles are still near peak spread (not after they fade/fall).
+        self._freeze_peak_threshold = max(4, int(self._initial_ticks * 0.42))
         self._timer.start(35)
         self.show()
         self.raise_()
@@ -142,18 +164,34 @@ class FireworksOverlay(QWidget):
             p["vy"] += 0.18
             p["life"] -= 0.028
         self.update()
+        if self._freeze_on_end and self._remaining <= self._freeze_peak_threshold:
+            self._timer.stop()
+            self._freeze_frame()
+            return
         if self._remaining <= 0:
             self._timer.stop()
             if self._freeze_on_end:
-                self._frozen = True
-                for p in self._particles:
-                    p["life"] = max(float(p["life"]), 0.38)
-                self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
-                self.update()
-                self.animation_finished.emit()
+                self._freeze_frame()
             else:
                 self.hide()
                 self.animation_finished.emit()
+
+    def _freeze_frame(self) -> None:
+        self._frozen = True
+        for p in self._particles:
+            p["life"] = max(float(p["life"]), 0.42)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+        self.update()
+        self.animation_finished.emit()
+
+    def force_hide_reset(self) -> None:
+        self._timer.stop()
+        self._frozen = False
+        self._freeze_on_end = False
+        self._particles = []
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.hide()
+        self.update()
 
     def mousePressEvent(self, event) -> None:  # noqa: N802
         if self._frozen and event.button() == Qt.MouseButton.LeftButton:
@@ -191,6 +229,20 @@ class ClickToResumeOverlay(QFrame):
         super().__init__(parent)
         self.setObjectName("TapGateOverlay")
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self._pick_mode = False
+        self._lay = QVBoxLayout(self)
+        self._lay.setContentsMargins(12, 12, 12, 12)
+        self._lay.addStretch(1)
+        self._label = QLabel(message)
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label.setWordWrap(True)
+        self._label.setFont(QFont("Helvetica Neue", 12, QFont.Weight.Bold))
+        self._label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
+        self._lay.addWidget(self._label, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
+        self._lay.addStretch(0)
+        self._apply_style_dark()
+
+    def _apply_style_dark(self) -> None:
         self.setStyleSheet(
             f"""
             #TapGateOverlay {{
@@ -199,16 +251,31 @@ class ClickToResumeOverlay(QFrame):
             }}
             """
         )
-        lay = QVBoxLayout(self)
-        lay.setContentsMargins(12, 12, 12, 12)
-        lay.addStretch(1)
-        self._label = QLabel(message)
-        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._label.setWordWrap(True)
+
+    def set_pick_mode(self, hint: str) -> None:
+        """Full-card click target; hint shown small at bottom (fireworks stay visible underneath)."""
+        self._pick_mode = True
+        self.setStyleSheet(
+            f"""
+            #TapGateOverlay {{
+                background: rgba(25, 22, 20, 0.10);
+                border-radius: {CARD_RADIUS}px;
+            }}
+            """
+        )
+        self._label.setText(hint)
+        self._label.setFont(QFont("Helvetica Neue", 8))
+        self._label.setStyleSheet(f"color: {COL['muted']}; background: transparent;")
+        self._label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
+
+    def clear_pick_mode(self) -> None:
+        if not self._pick_mode:
+            return
+        self._pick_mode = False
         self._label.setFont(QFont("Helvetica Neue", 12, QFont.Weight.Bold))
         self._label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
-        lay.addWidget(self._label)
-        lay.addStretch(2)
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._apply_style_dark()
 
     def set_message(self, message: str) -> None:
         self._label.setText(message)

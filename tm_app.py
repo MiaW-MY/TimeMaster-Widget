@@ -4,8 +4,16 @@ from dataclasses import replace
 from datetime import datetime, timedelta
 
 from PySide6.QtCore import QPoint, Qt, QTimer
-from PySide6.QtGui import QAction, QColor
-from PySide6.QtWidgets import QApplication, QGraphicsDropShadowEffect, QMainWindow, QMenu, QVBoxLayout, QWidget
+from PySide6.QtGui import QAction, QColor, QFont
+from PySide6.QtWidgets import (
+    QApplication,
+    QGraphicsDropShadowEffect,
+    QMainWindow,
+    QMenu,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from tm_config import AppConfig, day_stats_for, load_focus_stats, read_config, record_focus_completion, save_config
 from tm_resources import ASSET_MASCOT, ASSET_MASCOT_FALLBACK, CARD_H, CARD_W, COL, LANGUAGE_LAYOUTS, STRINGS
@@ -66,13 +74,33 @@ class TimeMasterWidget(QMainWindow):
         self.card_layout.addWidget(self.day_row, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.card_layout.addWidget(self.month_row, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.card_layout.addWidget(self.year_row, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.focus_interrupt_btn = QPushButton()
+        self.focus_interrupt_btn.setVisible(False)
+        self.focus_interrupt_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.focus_interrupt_btn.setFont(QFont("Helvetica Neue", 10))
+        self.focus_interrupt_btn.setStyleSheet(
+            f"""
+            QPushButton {{
+                background: {COL['surface']};
+                color: {COL['text']};
+                border: none;
+                padding: 4px 12px;
+                border-radius: 8px;
+            }}
+            QPushButton:hover {{
+                background: {COL['track']};
+            }}
+            """
+        )
+        self.focus_interrupt_btn.clicked.connect(self._interrupt_focus)
+        self.card_layout.addWidget(self.focus_interrupt_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.card_layout.addStretch(1)
 
         outer_layout.addWidget(self.card)
         self.setCentralWidget(outer)
 
         self.card.tap_gate.hide()
-        self.card.fireworks.frozen_clicked.connect(self._exit_focus_celebration)
+        self.card.tap_gate.clicked.connect(self._exit_focus_celebration)
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh_rows)
@@ -105,6 +133,7 @@ class TimeMasterWidget(QMainWindow):
     def apply_language(self) -> None:
         self._apply_language_layout()
         now = datetime.now()
+        self.focus_interrupt_btn.setText(self.t("focus_interrupt"))
         if self._post_focus_celebration:
             self.title_label.setText(self.t("title_completed"))
         elif self._focus_active(now):
@@ -141,6 +170,26 @@ class TimeMasterWidget(QMainWindow):
     def _exit_focus_celebration(self) -> None:
         self._post_focus_celebration = False
         self._celebration_session_sec = 0
+        self.card.fireworks.force_hide_reset()
+        self.card.tap_gate.hide()
+        self.card.tap_gate.clear_pick_mode()
+        self._reset_row_widgets_default()
+        self.apply_language()
+        self.refresh_rows()
+
+    def _reset_row_widgets_default(self) -> None:
+        for row in (self.target_row, self.day_row, self.month_row, self.year_row):
+            row.reset_row_style()
+        self.year_row.setVisible(True)
+
+    def _interrupt_focus(self) -> None:
+        now = datetime.now()
+        if self._post_focus_celebration or not self._focus_active(now):
+            return
+        self.config = replace(self.config, focus_duration_seconds=0, focus_started_at=None)
+        save_config(self.config)
+        self.focus_interrupt_btn.setVisible(False)
+        self._reset_row_widgets_default()
         self.apply_language()
         self.refresh_rows()
 
@@ -176,22 +225,79 @@ class TimeMasterWidget(QMainWindow):
         save_config(self.config)
         self._post_focus_celebration = True
         self.card.fireworks.start_animation(freeze_on_end=True)
+        self.card.fireworks.lower()
+        self.title_label.raise_()
+        for w in (self.target_row, self.day_row, self.month_row, self.year_row):
+            w.raise_()
+        self.focus_interrupt_btn.setVisible(False)
+        self.card.tap_gate.set_pick_mode(self.t("celebration_tap_hint"))
+        self.card.tap_gate.show()
+        self.card.tap_gate.raise_()
 
     def _render_celebration(self, now: datetime) -> None:
+        self.focus_interrupt_btn.setVisible(False)
         self.title_label.setText(self.t("title_completed"))
-        session_txt = self._format_short_duration(self._celebration_session_sec)
+        session_txt = self._format_session_duration_celebration(self._celebration_session_sec)
         stats = load_focus_stats()
         today_key = now.date().isoformat()
         ent = day_stats_for(stats, today_key)
         today_sec = int(ent.get("seconds", 0))
         n = int(ent.get("count", 0))
         today_txt = self._format_short_duration(today_sec)
-        self.target_row.set_row(self.t("celebration_line1", session=session_txt, today=today_txt, n=n), 1.0)
-        self.day_row.set_row(self.t("celebration_encourage"), 0.0)
-        self.month_row.setVisible(False)
+
+        self.target_row.set_bar_visible(False)
+        self.target_row.set_label_muted(False)
+        self.target_row.set_label_point_size(12)
+        self.target_row.set_row(self.t("celebration_completed", dur=session_txt), 0.0)
+
+        self.day_row.set_bar_visible(False)
+        self.day_row.set_label_muted(False)
+        self.day_row.set_label_point_size(16)
+        self.day_row.set_row(self.t("celebration_praise"), 0.0)
+
+        self.month_row.setVisible(True)
+        self.month_row.set_bar_visible(False)
+        self.month_row.set_label_muted(True)
+        self.month_row.set_label_point_size(10)
+        self.month_row.set_row(self.t("celebration_today_sub", today=today_txt, n=n), 0.0)
+
         self.year_row.setVisible(False)
+
         if self.card.fireworks.isVisible():
-            self.card.fireworks.raise_()
+            self.card.fireworks.lower()
+            self.title_label.raise_()
+            for w in (self.target_row, self.day_row, self.month_row):
+                w.raise_()
+            self.card.tap_gate.raise_()
+
+    def _format_session_duration_celebration(self, seconds: int) -> str:
+        """Session line under 「已完成」: 本轮 25分钟 / This round 25 mins; includes hours."""
+        if seconds <= 0:
+            return "0 分钟" if self.config.language == "zh" else "0 mins"
+        h, rem = divmod(seconds, 3600)
+        m, s = divmod(rem, 60)
+        if self.config.language == "zh":
+            if h > 0:
+                if m > 0:
+                    return f"{h}小时{m}分钟"
+                if s > 0:
+                    return f"{h}小时{s}秒"
+                return f"{h}小时"
+            if m > 0:
+                return f"{m}分钟"
+            return f"{s}秒"
+        if h > 0:
+            hp = "hr" if h == 1 else "hrs"
+            if m > 0:
+                mp = "min" if m == 1 else "mins"
+                return f"{h} {hp} {m} {mp}"
+            if s > 0:
+                sp = "sec" if s == 1 else "secs"
+                return f"{h} {hp} {s} {sp}"
+            return f"{h} {hp}"
+        if m > 0:
+            return f"{m} min" if m == 1 else f"{m} mins"
+        return f"{s} sec" if s == 1 else f"{s} secs"
 
     def _format_short_duration(self, seconds: int) -> str:
         if seconds <= 0:
@@ -273,18 +379,22 @@ class TimeMasterWidget(QMainWindow):
             elapsed = max(0.0, (now - started).total_seconds())
             total = float(self.config.focus_duration_seconds)
             prog = 0.0 if total <= 0 else min(1.0, elapsed / total)
-            self.target_row.set_row(self.t("focus_row", hms=hms), prog)
 
-            stats = load_focus_stats()
-            today_key = now.date().isoformat()
-            today_sec = int(day_stats_for(stats, today_key).get("seconds", 0))
-            self.day_row.set_row(self.t("focus_today", dur=self._format_short_duration(today_sec)), 0.0)
-
+            self.focus_interrupt_btn.setVisible(True)
+            self.day_row.setVisible(False)
             self.month_row.setVisible(False)
             self.year_row.setVisible(False)
+
+            self.target_row.reset_row_style()
+            self.target_row.set_label_point_size(15)
+            self.target_row.set_row(self.t("focus_row", hms=hms), prog)
             return
 
+        self.focus_interrupt_btn.setVisible(False)
+        self._reset_row_widgets_default()
+
         self.title_label.setText(self.t("title"))
+        self.day_row.setVisible(True)
         self.month_row.setVisible(True)
         self.year_row.setVisible(True)
 
@@ -357,6 +467,8 @@ class TimeMasterWidget(QMainWindow):
 
     def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802
         if self._post_focus_celebration:
+            return
+        if self._focus_active(datetime.now()):
             return
         if event.button() == Qt.MouseButton.LeftButton:
             self.open_target_dialog()
