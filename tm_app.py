@@ -37,7 +37,6 @@ class TimeMasterWidget(QMainWindow):
 
         self._post_focus_celebration = False
         self._celebration_session_sec = 0
-        self._top_spacer_active = False
 
         self.top_mascot = load_pixmap((ASSET_MASCOT, ASSET_MASCOT_FALLBACK), 31)
 
@@ -80,15 +79,15 @@ class TimeMasterWidget(QMainWindow):
                 background: {COL['surface']};
                 color: {COL['text']};
                 border: none;
-                padding: 7px 14px;
+                padding: 7px 8px;
                 border-radius: 10px;
-                min-width: 100px;
             }}
             QPushButton:hover {{
                 background: {COL['track']};
             }}
             """
         )
+        self.focus_interrupt_btn.setFixedWidth(BAR_W)
         self.focus_interrupt_btn.clicked.connect(self._interrupt_focus)
 
         self.focus_body = QWidget()
@@ -139,20 +138,6 @@ class TimeMasterWidget(QMainWindow):
     def _apply_language_layout(self) -> None:
         layout = LANGUAGE_LAYOUTS.get(self.config.language, LANGUAGE_LAYOUTS["zh"])
         self.card_layout.setContentsMargins(*layout["card_margins"])
-
-    def _add_top_layout_spacer(self) -> None:
-        if self._top_spacer_active:
-            return
-        self.card_layout.insertStretch(0, 1)
-        self._top_spacer_active = True
-
-    def _remove_top_layout_spacer(self) -> None:
-        if not self._top_spacer_active:
-            return
-        item = self.card_layout.itemAt(0)
-        if item is not None and item.spacerItem() is not None:
-            self.card_layout.removeItem(item)
-        self._top_spacer_active = False
 
     def _set_main_rows_layout_alignment(self, horizontal: Qt.AlignmentFlag) -> None:
         self.card_layout.setAlignment(self.focus_body, horizontal)
@@ -277,8 +262,6 @@ class TimeMasterWidget(QMainWindow):
 
     def _render_celebration(self, now: datetime) -> None:
         self.focus_interrupt_btn.setVisible(False)
-        self._remove_top_layout_spacer()
-        self._add_top_layout_spacer()
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
         self._apply_title_slot_main()
         self.card_layout.setSpacing(2)
@@ -452,14 +435,12 @@ class TimeMasterWidget(QMainWindow):
             self.target_row.set_label_point_size(15)
             self.target_row.set_row(self.t("focus_row", hms=hms), prog)
 
-            self._add_top_layout_spacer()
             self.focus_body.setFixedWidth(BAR_W)
             self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignHCenter)
             self._fb_layout.setAlignment(self.focus_interrupt_btn, Qt.AlignmentFlag.AlignHCenter)
             self.target_row.set_label_text_alignment(Qt.AlignmentFlag.AlignHCenter)
             return
 
-        self._remove_top_layout_spacer()
         self.focus_body.setFixedWidth(BAR_W)
         self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignLeft)
         self._fb_layout.setAlignment(self.focus_interrupt_btn, Qt.AlignmentFlag.AlignHCenter)
