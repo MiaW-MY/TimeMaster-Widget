@@ -16,7 +16,17 @@ from PySide6.QtWidgets import (
 )
 
 from tm_config import AppConfig, day_stats_for, load_focus_stats, read_config, record_focus_completion, save_config
-from tm_resources import ASSET_MASCOT, ASSET_MASCOT_FALLBACK, BAR_W, CARD_H, CARD_W, COL, LANGUAGE_LAYOUTS, STRINGS
+from tm_resources import (
+    ASSET_MASCOT,
+    ASSET_MASCOT_FALLBACK,
+    BAR_W,
+    CARD_CONTENT_W,
+    CARD_H,
+    CARD_W,
+    COL,
+    LANGUAGE_LAYOUTS,
+    STRINGS,
+)
 from tm_ui import (
     AppearanceOnlyDialog,
     CardFrame,
@@ -95,7 +105,7 @@ class TimeMasterWidget(QMainWindow):
         self._fb_layout = QVBoxLayout(self.focus_body)
         self._fb_layout.setContentsMargins(0, 0, 0, 0)
         self._fb_layout.setSpacing(6)
-        self._fb_layout.addWidget(self.target_row, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._fb_layout.addWidget(self.target_row, alignment=Qt.AlignmentFlag.AlignHCenter)
         self._fb_layout.addWidget(self.focus_interrupt_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.card_layout.addWidget(self.title_label, alignment=Qt.AlignmentFlag.AlignHCenter)
@@ -196,6 +206,7 @@ class TimeMasterWidget(QMainWindow):
         self.card_layout.setSpacing(4)
         self._apply_title_slot_main()
         self.focus_body.setFixedWidth(BAR_W)
+        self.focus_interrupt_btn.setFixedWidth(BAR_W)
         self.card.fireworks.force_hide_reset()
         self.card.tap_gate.hide()
         self.card.tap_gate.clear_pick_mode()
@@ -265,7 +276,7 @@ class TimeMasterWidget(QMainWindow):
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
         self._apply_title_slot_main()
         self.card_layout.setSpacing(2)
-        text_w = CARD_W - 14
+        text_w = CARD_CONTENT_W
         self.focus_body.setFixedWidth(text_w)
         self.target_row.set_text_column_width(text_w)
         self.day_row.set_text_column_width(text_w)
@@ -435,13 +446,17 @@ class TimeMasterWidget(QMainWindow):
             self.target_row.set_label_point_size(15)
             self.target_row.set_row(self.t("focus_row", hms=hms), prog)
 
-            self.focus_body.setFixedWidth(BAR_W)
+            cw = CARD_CONTENT_W
+            self.focus_body.setFixedWidth(cw)
+            self.target_row.set_text_column_width(cw)
+            self.focus_interrupt_btn.setFixedWidth(cw)
             self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignHCenter)
             self._fb_layout.setAlignment(self.focus_interrupt_btn, Qt.AlignmentFlag.AlignHCenter)
             self.target_row.set_label_text_alignment(Qt.AlignmentFlag.AlignHCenter)
             return
 
         self.focus_body.setFixedWidth(BAR_W)
+        self.focus_interrupt_btn.setFixedWidth(BAR_W)
         self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignLeft)
         self._fb_layout.setAlignment(self.focus_interrupt_btn, Qt.AlignmentFlag.AlignHCenter)
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)

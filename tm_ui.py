@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tm_config import AppConfig, clamp_alpha, day_stats_for, load_focus_stats
+from tm_config import AppConfig, clamp_alpha, day_stats_for, load_focus_stats, parse_focus_duration_input
 from tm_resources import BAR_H, BAR_W, CARD_H, CARD_RADIUS, CARD_W, COL
 
 
@@ -459,7 +459,7 @@ class FocusOnlyDialog(QDialog):
         layout.addWidget(focus_label)
         focus_row = QHBoxLayout()
         self.focus_edit = QLineEdit()
-        self.focus_edit.setPlaceholderText("25")
+        self.focus_edit.setPlaceholderText(strings["dlg_focus_placeholder"])
         focus_row.addWidget(self.focus_edit, stretch=1)
         self.focus_unit = QComboBox()
         self.focus_unit.addItem(strings["dlg_focus_unit_min"], "min")
@@ -486,17 +486,9 @@ class FocusOnlyDialog(QDialog):
         focus_started = self._base_config.focus_started_at
         raw_focus = self.focus_edit.text().strip()
         if raw_focus:
-            try:
-                n = float(raw_focus)
-            except ValueError:
-                self.error_label.setText(self._strings["dlg_err_focus"])
-                return
-            if n <= 0:
-                self.error_label.setText(self._strings["dlg_err_focus"])
-                return
             unit = self.focus_unit.currentData()
-            seconds = int(n * 60) if unit == "min" else int(n * 3600)
-            if seconds < 60:
+            seconds = parse_focus_duration_input(raw_focus, plain_unit=unit)
+            if seconds is None:
                 self.error_label.setText(self._strings["dlg_err_focus"])
                 return
             focus_dur = seconds

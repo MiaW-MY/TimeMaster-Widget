@@ -6,6 +6,7 @@ ASSET_MASCOT_FALLBACK = PROJECT_ROOT / "assets" / "mascot.png"
 CARD_W = 173
 CARD_H = 173
 CARD_RADIUS = 25
+CARD_CONTENT_W = CARD_W - 14
 BAR_W = 110
 BAR_H = 5
 
@@ -49,10 +50,11 @@ STRINGS = {
         "dlg_focus_title": "专注",
         "dlg_appearance_title": "外观",
         "dlg_focus": "专注时长",
-        "dlg_focus_hint": "留空则不开始；保存后立即开始",
+        "dlg_focus_hint": "留空则不开始；保存后立即开始。纯数字用右侧单位；也可写组合，如 1小时10分、1h10min、90min",
+        "dlg_focus_placeholder": "25 或 1h10min",
         "dlg_focus_unit_min": "分钟",
         "dlg_focus_unit_hr": "小时",
-        "dlg_err_focus": "请输入正数",
+        "dlg_err_focus": "格式无效（例：25、1.5、1h10min、90min，至少 1 分钟）",
         "dlg_alpha": "透明度",
         "dlg_ok": "完成",
         "dlg_err_date": "日期格式：2026-12-31",
@@ -98,10 +100,11 @@ STRINGS = {
         "dlg_focus_title": "Focus",
         "dlg_appearance_title": "Appearance",
         "dlg_focus": "Focus duration",
-        "dlg_focus_hint": "Leave empty to skip; starts on save",
+        "dlg_focus_hint": "Leave empty to skip; starts on save. Plain numbers use the unit on the right; combined forms work too (e.g. 1h10min, 90min, 1.5h).",
+        "dlg_focus_placeholder": "25 or 1h10min",
         "dlg_focus_unit_min": "minutes",
         "dlg_focus_unit_hr": "hours",
-        "dlg_err_focus": "Enter a positive number",
+        "dlg_err_focus": "Invalid duration (e.g. 25, 1.5, 1h10min, 90min; min 1 minute)",
         "dlg_alpha": "Opacity",
         "dlg_ok": "Save",
         "dlg_err_date": "Date: YYYY-MM-DD",

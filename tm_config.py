@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import re
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Any
@@ -29,6 +30,79 @@ def clamp_alpha(value: object) -> float:
     except (TypeError, ValueError):
         return 0.96
     return max(0.35, min(1.0, alpha))
+
+
+def _normalize_duration_to_ascii_compact(s: str) -> str:
+    """Map Chinese units + spaces to compact h/min/s tokens for the ASCII parser."""
+    out = s.strip()
+    out = re.sub(r"(\d+(?:\.\d+)?)\s*分钟", r"\1min", out)
+    out = re.sub(r"(\d+(?:\.\d+)?)\s*小时", r"\1h", out)
+    out = re.sub(r"(\d+(?:\.\d+)?)\s*分(?!钟)", r"\1min", out)
+    out = re.sub(r"(\d+(?:\.\d+)?)\s*秒", r"\1s", out)
+    return re.sub(r"\s+", "", out.lower())
+
+
+def _parse_ascii_duration_tokens(t: str) -> float | None:
+    """t: lowercased, spaces removed."""
+    if not t:
+        return None
+    sec = 0.0
+    rest = t
+    while rest:
+        m = re.match(r"^(\d+(?:\.\d+)?)h", rest)
+        if m:
+            sec += float(m.group(1)) * 3600
+            rest = rest[m.end() :]
+            continue
+        m = re.match(r"^(\d+(?:\.\d+)?)min", rest)
+        if m:
+            sec += float(m.group(1)) * 60
+            rest = rest[m.end() :]
+            continue
+        m = re.match(r"^(\d+(?:\.\d+)?)m(?![a-z])", rest)
+        if m:
+            sec += float(m.group(1)) * 60
+            rest = rest[m.end() :]
+            continue
+        m = re.match(r"^(\d+(?:\.\d+)?)(?:s|sec|secs)(?![a-z])", rest)
+        if m:
+            sec += float(m.group(1))
+            rest = rest[m.end() :]
+            continue
+        return None
+    return sec if sec > 0 else None
+
+
+def _parse_compound_duration(raw: str) -> float | None:
+    s = raw.strip()
+    if not s:
+        return None
+    t = _normalize_duration_to_ascii_compact(s)
+    return _parse_ascii_duration_tokens(t)
+
+
+def parse_focus_duration_input(raw: str, *, plain_unit: str) -> int | None:
+    """
+    Return total seconds for a focus duration, or None if invalid / empty.
+    plain_unit: 'min' or 'hr' when the string is a single plain number (e.g. 25, 1.5).
+    """
+    s = raw.strip()
+    if not s:
+        return None
+    if re.fullmatch(r"\d+(?:\.\d+)?", s):
+        try:
+            n = float(s)
+        except ValueError:
+            return None
+        if n <= 0:
+            return None
+        mult = 60.0 if plain_unit == "min" else 3600.0
+        val = int(n * mult)
+        return val if val >= 60 else None
+    secf = _parse_compound_duration(s)
+    if secf is None or secf < 60:
+        return None
+    return int(secf)
 
 
 def parse_iso_datetime(raw: str) -> datetime | None:
