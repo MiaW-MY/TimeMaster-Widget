@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from tm_config import AppConfig, clamp_alpha, day_stats_for, load_focus_stats
-from tm_resources import BAR_H, BAR_W, CARD_RADIUS, COL
+from tm_resources import BAR_H, BAR_W, CARD_H, CARD_RADIUS, CARD_W, COL
 
 
 def load_pixmap(paths: tuple, max_width: int, crop_top: int = 0) -> QPixmap | None:
@@ -74,7 +74,7 @@ class RowWidget(QWidget):
         self.label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
         self.label.setFont(QFont("Helvetica Neue", self._default_label_pt))
         self.label.setWordWrap(True)
-        self.label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         self.bar = ProgressBar(BAR_W, BAR_H)
         self.setFixedWidth(BAR_W)
         layout.addWidget(self.label)
@@ -87,8 +87,12 @@ class RowWidget(QWidget):
     def reset_row_style(self) -> None:
         self.label.setFont(QFont("Helvetica Neue", self._default_label_pt))
         self.label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
+        self.label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         self.bar.setVisible(True)
         self.set_text_column_width(None)
+
+    def set_label_text_alignment(self, horizontal: Qt.AlignmentFlag) -> None:
+        self.label.setAlignment(horizontal | Qt.AlignmentFlag.AlignTop)
 
     def set_label_point_size(self, pt: int) -> None:
         self.label.setFont(QFont("Helvetica Neue", pt))
@@ -136,9 +140,13 @@ class FireworksOverlay(QWidget):
         self._freeze_on_end = freeze_on_end
         self._particles = []
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        parent = self.parentWidget()
+        if parent is not None:
+            self.setGeometry(0, 0, max(1, parent.width()), max(1, parent.height()))
         w, h = self.width(), self.height()
         if w <= 0 or h <= 0:
-            return
+            w, h = max(1, CARD_W), max(1, CARD_H)
+            self.resize(w, h)
         cx, cy = w // 2, h // 2
         palette = [
             QColor(255, 214, 120),
@@ -168,7 +176,7 @@ class FireworksOverlay(QWidget):
         self._freeze_peak_threshold = max(4, int(self._initial_ticks * 0.42))
         self._timer.start(35)
         self.show()
-        self.raise_()
+        self.lower()
 
     def _tick(self) -> None:
         if self._frozen:
@@ -231,7 +239,7 @@ class FireworksOverlay(QWidget):
             if not self._frozen and life <= 0:
                 continue
             c: QColor = p["color"]
-            c = QColor(c.red(), c.green(), c.blue(), int(max(0, min(255, life * 220))))
+            c = QColor(c.red(), c.green(), c.blue(), int(max(0, min(255, life * 255))))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(c)
             r = p["r"]
@@ -274,7 +282,7 @@ class ClickToResumeOverlay(QFrame):
         self.setStyleSheet(
             f"""
             #TapGateOverlay {{
-                background: rgba(25, 22, 20, 0.10);
+                background: transparent;
                 border-radius: {CARD_RADIUS}px;
             }}
             """
