@@ -147,7 +147,13 @@ class FireworksOverlay(QWidget):
         if w <= 0 or h <= 0:
             w, h = max(1, CARD_W), max(1, CARD_H)
             self.resize(w, h)
-        cx, cy = w // 2, h // 2
+        dim = float(min(w, h))
+        # Burst origin: slightly above geometric center — matches small card layout (title + content), not a large-window center.
+        cx, cy = w * 0.5, h * 0.42
+        # Scale motion to card size (velocities were tuned like a large canvas; on ~173px they fly out / clip on rounded corners).
+        v_scale = max(0.45, min(1.15, dim / 173.0)) * 0.72
+        g_scale = max(0.5, min(1.2, dim / 173.0))
+        r_lo, r_hi = dim * 0.012, dim * 0.024
         palette = [
             QColor(255, 214, 120),
             QColor(255, 150, 150),
@@ -155,19 +161,20 @@ class FireworksOverlay(QWidget):
             QColor(200, 255, 200),
             QColor(255, 255, 255),
         ]
-        for _ in range(48):
+        for _ in range(56):
             ang = random.uniform(0, 2 * math.pi)
-            spd = random.uniform(1.8, 7.5)
+            spd = random.uniform(1.0, 3.4) * v_scale
             c = random.choice(palette)
             self._particles.append(
                 {
                     "x": float(cx),
                     "y": float(cy),
                     "vx": math.cos(ang) * spd,
-                    "vy": math.sin(ang) * spd - random.uniform(0.0, 2.2),
-                    "life": random.uniform(0.55, 1.0),
+                    "vy": math.sin(ang) * spd - random.uniform(0.0, 1.1 * v_scale),
+                    "life": random.uniform(0.58, 1.0),
                     "color": c,
-                    "r": random.uniform(1.6, 3.2),
+                    "r": random.uniform(r_lo, r_hi),
+                    "g": 0.11 * g_scale,
                 }
             )
         self._initial_ticks = max(1, duration_ms // 35)
@@ -185,8 +192,8 @@ class FireworksOverlay(QWidget):
         for p in self._particles:
             p["x"] += p["vx"]
             p["y"] += p["vy"]
-            p["vy"] += 0.18
-            p["life"] -= 0.028
+            p["vy"] += float(p.get("g", 0.11))
+            p["life"] -= 0.023
         self.update()
         if self._freeze_on_end and self._remaining <= self._freeze_peak_threshold:
             self._timer.stop()
@@ -203,7 +210,7 @@ class FireworksOverlay(QWidget):
     def _freeze_frame(self) -> None:
         self._frozen = True
         for p in self._particles:
-            p["life"] = max(float(p["life"]), 0.42)
+            p["life"] = max(float(p["life"]), 0.52)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
         self.update()
         self.animation_finished.emit()
@@ -235,11 +242,12 @@ class FireworksOverlay(QWidget):
         for p in self._particles:
             if not self._frozen and p["life"] <= 0:
                 continue
-            life = max(float(p["life"]), 0.34) if self._frozen else float(p["life"])
+            life = max(float(p["life"]), 0.42) if self._frozen else float(p["life"])
             if not self._frozen and life <= 0:
                 continue
             c: QColor = p["color"]
-            c = QColor(c.red(), c.green(), c.blue(), int(max(0, min(255, life * 255))))
+            alpha = int(max(0, min(255, life * 290)))
+            c = QColor(c.red(), c.green(), c.blue(), alpha)
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(c)
             r = p["r"]
@@ -602,7 +610,7 @@ class StatsDialog(QDialog):
         total_sec = 0
         total_cnt = 0
         for i in range(30):
-            d = today - timedelta(days=29 - i)
+            d = today - timedelta(days=i)
             key = d.isoformat()
             entry = day_stats_for(stats, key)
             sec = int(entry.get("seconds", 0))

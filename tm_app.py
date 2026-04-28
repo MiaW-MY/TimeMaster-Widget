@@ -80,9 +80,9 @@ class TimeMasterWidget(QMainWindow):
                 background: {COL['surface']};
                 color: {COL['text']};
                 border: none;
-                padding: 9px 20px;
+                padding: 7px 14px;
                 border-radius: 10px;
-                min-width: 128px;
+                min-width: 100px;
             }}
             QPushButton:hover {{
                 background: {COL['track']};
@@ -313,7 +313,7 @@ class TimeMasterWidget(QMainWindow):
         self.month_row.setVisible(True)
         self.month_row.set_bar_visible(False)
         self.month_row.set_label_muted(True)
-        self.month_row.set_label_point_size(10)
+        self.month_row.set_label_point_size(12)
         self.month_row.set_row(self.t("celebration_today_sub", today=today_txt), 0.0)
 
         self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignHCenter)
@@ -453,7 +453,7 @@ class TimeMasterWidget(QMainWindow):
             self.target_row.set_row(self.t("focus_row", hms=hms), prog)
 
             self._add_top_layout_spacer()
-            self.focus_body.setFixedWidth(max(BAR_W, 136))
+            self.focus_body.setFixedWidth(BAR_W)
             self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignHCenter)
             self._fb_layout.setAlignment(self.focus_interrupt_btn, Qt.AlignmentFlag.AlignHCenter)
             self.target_row.set_label_text_alignment(Qt.AlignmentFlag.AlignHCenter)
