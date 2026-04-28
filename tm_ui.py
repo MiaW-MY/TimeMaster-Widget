@@ -73,6 +73,8 @@ class RowWidget(QWidget):
         self.label = QLabel()
         self.label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
         self.label.setFont(QFont("Helvetica Neue", self._default_label_pt))
+        self.label.setWordWrap(True)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         self.bar = ProgressBar(BAR_W, BAR_H)
         self.setFixedWidth(BAR_W)
         layout.addWidget(self.label)
@@ -86,6 +88,7 @@ class RowWidget(QWidget):
         self.label.setFont(QFont("Helvetica Neue", self._default_label_pt))
         self.label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
         self.bar.setVisible(True)
+        self.set_text_column_width(None)
 
     def set_label_point_size(self, pt: int) -> None:
         self.label.setFont(QFont("Helvetica Neue", pt))
@@ -96,6 +99,19 @@ class RowWidget(QWidget):
 
     def set_bar_visible(self, visible: bool) -> None:
         self.bar.setVisible(visible)
+
+    def set_text_column_width(self, width: int | None) -> None:
+        """None: default narrow column (BAR_W). Int: use almost full card width for wrapped celebration text."""
+        if width is None:
+            self.setFixedWidth(BAR_W)
+            self.label.setMinimumWidth(0)
+            self.label.setMaximumWidth(16777215)
+            self.bar.setFixedSize(BAR_W, BAR_H)
+            return
+        self.setFixedWidth(width)
+        self.label.setMinimumWidth(width)
+        self.label.setMaximumWidth(width)
+        self.bar.setFixedSize(width, BAR_H)
 
 
 class FireworksOverlay(QWidget):
@@ -234,8 +250,8 @@ class ClickToResumeOverlay(QFrame):
         self._lay.setContentsMargins(12, 12, 12, 12)
         self._lay.addStretch(1)
         self._label = QLabel(message)
-        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._label.setWordWrap(True)
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._label.setFont(QFont("Helvetica Neue", 12, QFont.Weight.Bold))
         self._label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
         self._lay.addWidget(self._label, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
@@ -267,8 +283,15 @@ class ClickToResumeOverlay(QFrame):
         self._label.setFont(QFont("Helvetica Neue", 8))
         self._label.setStyleSheet(f"color: {COL['muted']}; background: transparent;")
         self._label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
+        self._label.setWordWrap(True)
+        pw = self.parent().width() if self.parent() is not None else 173
+        self._label.setMaximumWidth(max(96, pw - 16))
 
-    def clear_pick_mode(self) -> None:
+    def update_pick_hint_geometry(self) -> None:
+        if not self._pick_mode:
+            return
+        pw = self.parent().width() if self.parent() is not None else 173
+        self._label.setMaximumWidth(max(96, pw - 16))
         if not self._pick_mode:
             return
         self._pick_mode = False
@@ -276,6 +299,7 @@ class ClickToResumeOverlay(QFrame):
         self._label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
         self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._apply_style_dark()
+        self._label.setMaximumWidth(16777215)
 
     def set_message(self, message: str) -> None:
         self._label.setText(message)
@@ -636,6 +660,7 @@ class CardFrame(QFrame):
         r = self.rect()
         self.fireworks.setGeometry(r)
         self.tap_gate.setGeometry(r)
+        self.tap_gate.update_pick_hint_geometry()
 
     def paintEvent(self, event) -> None:  # noqa: N802
         _ = event

@@ -170,6 +170,7 @@ class TimeMasterWidget(QMainWindow):
     def _exit_focus_celebration(self) -> None:
         self._post_focus_celebration = False
         self._celebration_session_sec = 0
+        self.card_layout.setSpacing(4)
         self.card.fireworks.force_hide_reset()
         self.card.tap_gate.hide()
         self.card.tap_gate.clear_pick_mode()
@@ -236,6 +237,16 @@ class TimeMasterWidget(QMainWindow):
 
     def _render_celebration(self, now: datetime) -> None:
         self.focus_interrupt_btn.setVisible(False)
+        self.card_layout.setSpacing(2)
+        text_w = CARD_W - 14
+        self.target_row.set_text_column_width(text_w)
+        self.day_row.set_text_column_width(text_w)
+        self.month_row.set_text_column_width(text_w)
+
+        self.target_row.setVisible(True)
+        self.day_row.setVisible(True)
+        self.month_row.setVisible(True)
+
         self.title_label.setText(self.t("title_completed"))
         session_txt = self._format_session_duration_celebration(self._celebration_session_sec)
         stats = load_focus_stats()
@@ -265,10 +276,11 @@ class TimeMasterWidget(QMainWindow):
 
         if self.card.fireworks.isVisible():
             self.card.fireworks.lower()
-            self.title_label.raise_()
-            for w in (self.target_row, self.day_row, self.month_row):
-                w.raise_()
-            self.card.tap_gate.raise_()
+        self.title_label.raise_()
+        for w in (self.target_row, self.day_row, self.month_row):
+            w.raise_()
+        self.card.tap_gate.raise_()
+        self.card.tap_gate.update_pick_hint_geometry()
 
     def _format_session_duration_celebration(self, seconds: int) -> str:
         """Session line under 「已完成」: 本轮 25分钟 / This round 25 mins; includes hours."""

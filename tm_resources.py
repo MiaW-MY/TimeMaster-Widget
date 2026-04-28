@@ -71,7 +71,7 @@ STRINGS = {
         "celebration_completed": "本轮{dur}",
         "celebration_praise": "太棒了！",
         "celebration_today_sub": "今日累计 {today} · 第 {n} 次",
-        "celebration_tap_hint": "轻触任意处继续",
+        "celebration_tap_hint": "轻触继续",
     },
     "en": {
         "title": "Time Master",
@@ -120,7 +120,7 @@ STRINGS = {
         "celebration_completed": "Round {dur}",
         "celebration_praise": "Nice work!",
         "celebration_today_sub": "Today {today} · #{n}",
-        "celebration_tap_hint": "Tap anywhere to continue",
+        "celebration_tap_hint": "Tap to continue",
     },
 }
 
