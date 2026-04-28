@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from PySide6.QtCore import QRectF, Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPixmap
 from PySide6.QtWidgets import (
-    QComboBox,
     QDialog,
     QFrame,
     QHBoxLayout,
@@ -20,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tm_config import AppConfig, clamp_alpha, day_stats_for, load_focus_stats, parse_focus_duration_input
+from tm_config import AppConfig, clamp_alpha, day_stats_for, load_focus_stats
 from tm_resources import BAR_H, BAR_W, CARD_H, CARD_RADIUS, CARD_W, COL
 
 
@@ -457,15 +456,28 @@ class FocusOnlyDialog(QDialog):
         focus_label = QLabel(strings["dlg_focus"])
         focus_label.setFont(QFont("Helvetica Neue", 11))
         layout.addWidget(focus_label)
-        focus_row = QHBoxLayout()
-        self.focus_edit = QLineEdit()
-        self.focus_edit.setPlaceholderText(strings["dlg_focus_placeholder"])
-        focus_row.addWidget(self.focus_edit, stretch=1)
-        self.focus_unit = QComboBox()
-        self.focus_unit.addItem(strings["dlg_focus_unit_min"], "min")
-        self.focus_unit.addItem(strings["dlg_focus_unit_hr"], "hr")
-        focus_row.addWidget(self.focus_unit)
-        layout.addLayout(focus_row)
+
+        row = QHBoxLayout()
+        row.setSpacing(8)
+        lh = QLabel(strings["dlg_focus_hours"])
+        lh.setFont(QFont("Helvetica Neue", 11))
+        row.addWidget(lh)
+        self.hours_edit = QLineEdit()
+        self.hours_edit.setFixedWidth(52)
+        self.hours_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.hours_edit.setPlaceholderText("0")
+        row.addWidget(self.hours_edit)
+        lm = QLabel(strings["dlg_focus_minutes"])
+        lm.setFont(QFont("Helvetica Neue", 11))
+        row.addWidget(lm)
+        self.minutes_edit = QLineEdit()
+        self.minutes_edit.setFixedWidth(52)
+        self.minutes_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.minutes_edit.setPlaceholderText("0")
+        row.addWidget(self.minutes_edit)
+        row.addStretch(1)
+        layout.addLayout(row)
+
         hint = QLabel(strings["dlg_focus_hint"])
         hint.setFont(QFont("Helvetica Neue", 9))
         hint.setWordWrap(True)
@@ -481,19 +493,51 @@ class FocusOnlyDialog(QDialog):
         save_btn.clicked.connect(self._apply)
         layout.addWidget(save_btn)
 
+        self._prefill_from_config(config)
+
+    def _prefill_from_config(self, config: AppConfig) -> None:
+        sec = int(config.focus_duration_seconds or 0)
+        if sec <= 0:
+            self.hours_edit.clear()
+            self.minutes_edit.clear()
+            return
+        h = sec // 3600
+        m = (sec % 3600) // 60
+        self.hours_edit.setText(str(h))
+        self.minutes_edit.setText(str(m))
+
     def _apply(self) -> None:
         focus_dur = self._base_config.focus_duration_seconds
         focus_started = self._base_config.focus_started_at
-        raw_focus = self.focus_edit.text().strip()
-        if raw_focus:
-            unit = self.focus_unit.currentData()
-            seconds = parse_focus_duration_input(raw_focus, plain_unit=unit)
-            if seconds is None:
-                self.error_label.setText(self._strings["dlg_err_focus"])
-                return
-            focus_dur = seconds
-            focus_started = datetime.now()
-
+        raw_h = self.hours_edit.text().strip()
+        raw_m = self.minutes_edit.text().strip()
+        if not raw_h and not raw_m:
+            self.applied.emit(
+                AppConfig(
+                    target=self._base_config.target,
+                    language=self._base_config.language,
+                    countdown_mode="day",
+                    countdown_start=self._base_config.countdown_start,
+                    alpha=self._base_config.alpha,
+                    focus_duration_seconds=focus_dur,
+                    focus_started_at=focus_started,
+                )
+            )
+            self.accept()
+            return
+        try:
+            h = int(raw_h) if raw_h else 0
+            m = int(raw_m) if raw_m else 0
+        except ValueError:
+            self.error_label.setText(self._strings["dlg_err_focus"])
+            return
+        if h < 0 or m < 0:
+            self.error_label.setText(self._strings["dlg_err_focus"])
+            return
+        seconds = h * 3600 + m * 60
+        if seconds < 60:
+            self.error_label.setText(self._strings["dlg_err_focus"])
+            return
         self.applied.emit(
             AppConfig(
                 target=self._base_config.target,
@@ -501,8 +545,8 @@ class FocusOnlyDialog(QDialog):
                 countdown_mode="day",
                 countdown_start=self._base_config.countdown_start,
                 alpha=self._base_config.alpha,
-                focus_duration_seconds=focus_dur,
-                focus_started_at=focus_started,
+                focus_duration_seconds=seconds,
+                focus_started_at=datetime.now(),
             )
         )
         self.accept()
