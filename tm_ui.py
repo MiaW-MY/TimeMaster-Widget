@@ -505,6 +505,6 @@ class CardFrame(QFrame):
 
         if self.top_pixmap is not None:
             painter.setOpacity(0.9)
-            painter.drawPixmap(self.width() - self.top_pixmap.width() - 12, 9, self.top_pixmap)
+            painter.drawPixmap(self.width() - self.top_pixmap.width() - 4, 9, self.top_pixmap)
 
         painter.setOpacity(1.0)
