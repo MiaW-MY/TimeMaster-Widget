@@ -89,6 +89,15 @@ class RowWidget(QWidget):
         self.label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         self.bar.setVisible(True)
         self.set_text_column_width(None)
+        lay = self.layout()
+        if lay is not None:
+            lay.setSpacing(2)
+
+    def set_column_spacing(self, px: int) -> None:
+        """Vertical gap between label and progress bar (default 2)."""
+        lay = self.layout()
+        if lay is not None:
+            lay.setSpacing(px)
 
     def set_label_text_alignment(self, horizontal: Qt.AlignmentFlag) -> None:
         self.label.setAlignment(horizontal | Qt.AlignmentFlag.AlignTop)
@@ -286,7 +295,7 @@ class ClickToResumeOverlay(QFrame):
     def set_pick_mode(self, hint: str) -> None:
         """Full-card click target; hint shown small at bottom (fireworks stay visible underneath)."""
         self._pick_mode = True
-        self._lay.setContentsMargins(12, 12, 12, 22)
+        self._lay.setContentsMargins(12, 12, 12, 28)
         self.setStyleSheet(
             f"""
             #TapGateOverlay {{

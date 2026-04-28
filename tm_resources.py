@@ -127,5 +127,5 @@ STRINGS = {
 
 LANGUAGE_LAYOUTS = {
     "zh": {"card_margins": (7, 9, 11, 4)},
-    "en": {"card_margins": (2, 16, 18, 1)},
+    "en": {"card_margins": (10, 16, 10, 1)},
 }
