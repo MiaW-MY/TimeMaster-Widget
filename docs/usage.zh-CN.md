@@ -46,6 +46,7 @@ cd TimeMaster-Widget
 - 左键拖动挂件位置
 - 双击打开设置
 - 右键打开菜单
+- 右键菜单可打开「统计…」查看近 30 天专注数据
 - 右键菜单可切换中文 / 英文
 - 右键菜单可退出程序
 
@@ -54,10 +55,13 @@ cd TimeMaster-Widget
 当前支持的设置项：
 
 - 目标日期
+- 专注时长（分钟或小时；留空则不新开会话；保存后立即开始，最短 1 分钟）
 - 透明度
 - 界面语言
 
 配置会写入本地 `time_master_config.py`。
+
+专注统计数据写入本地 `time_master_focus_stats.json`（按日期记录秒数与次数），该文件默认不提交到 Git。
 
 ## 5. 本地配置文件
 
@@ -75,6 +79,8 @@ cd TimeMaster-Widget
 - `WIDGET_ALPHA`
 - `TARGET_ISO`
 - `COUNTDOWN_START_ISO`
+- `FOCUS_DURATION_SECONDS`
+- `FOCUS_STARTED_ISO`
 
 ## 6. 常见问题
 

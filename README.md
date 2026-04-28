@@ -1,6 +1,6 @@
 # TimeMaster-Widget
 
-A PySide6-based floating desktop countdown widget for macOS, with bilingual UI, opacity control, custom target date, and cat-themed card styling.
+A PySide6-based floating desktop countdown widget for macOS, with bilingual UI, opacity control, custom target date, optional focus sessions with fireworks on completion, per-day focus statistics, and cat-themed card styling.
 
 ## Screenshots
 
@@ -29,8 +29,10 @@ python3 time_master.py
 - Floating always-on-top countdown card
 - Chinese and English UI
 - Custom target date with persistent local config
+- Focus timer (minutes or hours) from settings; fireworks on successful completion
+- Right-click Statistics window for the last 30 days (duration and session counts)
 - Opacity adjustment
-- Rounded card layout with decorative cat assets
+- Rounded card layout with a decorative cat asset
 
 ## Documentation
 
@@ -96,6 +98,10 @@ Supported fields:
 - `WIDGET_ALPHA`: `0.35` to `1.00`
 - `TARGET_ISO`: target datetime in ISO format
 - `COUNTDOWN_START_ISO`: countdown start datetime in ISO format
+- `FOCUS_DURATION_SECONDS`: active focus session length in seconds (`0` when idle)
+- `FOCUS_STARTED_ISO`: focus session start time in ISO format
+
+Focus statistics are stored in `time_master_focus_stats.json` in the project directory (ignored by Git).
 
 ## Assets
 

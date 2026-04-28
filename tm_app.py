@@ -1,15 +1,15 @@
 import calendar
 import sys
-from datetime import datetime
+from dataclasses import replace
+from datetime import datetime, timedelta
 
-from qt_compat import PROJECT_ROOT  # noqa: F401
 from PySide6.QtCore import QPoint, Qt, QTimer
 from PySide6.QtGui import QAction, QColor
 from PySide6.QtWidgets import QApplication, QGraphicsDropShadowEffect, QMainWindow, QMenu, QVBoxLayout, QWidget
 
-from tm_config import AppConfig, read_config, save_config
-from tm_resources import ASSET_CATS, ASSET_MASCOT, ASSET_MASCOT_FALLBACK, CARD_H, CARD_W, COL, LANGUAGE_LAYOUTS, STRINGS
-from tm_ui import CardFrame, RowWidget, SettingsDialog, load_pixmap
+from tm_config import AppConfig, day_stats_for, load_focus_stats, read_config, record_focus_completion, save_config
+from tm_resources import ASSET_MASCOT, ASSET_MASCOT_FALLBACK, CARD_H, CARD_W, COL, LANGUAGE_LAYOUTS, STRINGS
+from tm_ui import CardFrame, RowWidget, SettingsDialog, StatsDialog, load_pixmap
 
 
 class TimeMasterWidget(QMainWindow):
@@ -19,8 +19,7 @@ class TimeMasterWidget(QMainWindow):
         self.drag_origin: QPoint | None = None
         self.drag_window_origin: QPoint | None = None
 
-        self.top_mascot = load_pixmap((ASSET_MASCOT, ASSET_MASCOT_FALLBACK), 34)
-        self.bottom_cats = load_pixmap((ASSET_CATS,), 82, crop_top=12)
+        self.top_mascot = load_pixmap((ASSET_MASCOT, ASSET_MASCOT_FALLBACK), 31)
 
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
@@ -34,12 +33,11 @@ class TimeMasterWidget(QMainWindow):
 
         self.card = CardFrame()
         self.card.top_pixmap = self.top_mascot
-        self.card.bottom_pixmap = self.bottom_cats
         self.card.setStyleSheet("background: transparent;")
 
         shadow = QGraphicsDropShadowEffect(self.card)
-        shadow.setBlurRadius(24)
-        shadow.setOffset(0, 8)
+        shadow.setBlurRadius(22)
+        shadow.setOffset(0, 7)
         shadow.setColor(QColor(40, 30, 30, 70))
         self.card.setGraphicsEffect(shadow)
 
@@ -92,7 +90,7 @@ class TimeMasterWidget(QMainWindow):
 
     def apply_language(self) -> None:
         self._apply_language_layout()
-        self.title_label.setText(self.t("title"))
+        self.title_label.setText(self.t("title_focus") if self._focus_active(datetime.now()) else self.t("title"))
 
     def set_language(self, language: str) -> None:
         if language not in STRINGS:
@@ -107,12 +105,60 @@ class TimeMasterWidget(QMainWindow):
         dialog.settings_applied.connect(self.apply_settings)
         dialog.exec()
 
+    def open_stats_dialog(self) -> None:
+        StatsDialog(self.strings(), self).exec()
+
     def apply_settings(self, new_config: AppConfig) -> None:
         new_config.language = self.config.language
         self.config = new_config
         self.setWindowOpacity(self.config.alpha)
         save_config(self.config)
+        self.apply_language()
         self.refresh_rows()
+
+    def _focus_end(self) -> datetime | None:
+        if self.config.focus_duration_seconds <= 0 or self.config.focus_started_at is None:
+            return None
+        return self.config.focus_started_at + timedelta(seconds=self.config.focus_duration_seconds)
+
+    def _focus_active(self, now: datetime) -> bool:
+        end = self._focus_end()
+        if end is None:
+            return False
+        return now < end
+
+    def _maybe_complete_focus(self, now: datetime) -> None:
+        end = self._focus_end()
+        if end is None:
+            return
+        if now < end:
+            return
+        dur = self.config.focus_duration_seconds
+        record_focus_completion(dur)
+        self.config = replace(self.config, focus_duration_seconds=0, focus_started_at=None)
+        save_config(self.config)
+        self.card.fireworks.start_animation()
+
+    def _format_short_duration(self, seconds: int) -> str:
+        if seconds <= 0:
+            return "0" + ("分" if self.config.language == "zh" else "m")
+        if self.config.language == "zh":
+            if seconds >= 3600:
+                h, r = divmod(seconds, 3600)
+                m = r // 60
+                return f"{h}小时{m}分" if m else f"{h}小时"
+            m, s = divmod(seconds, 60)
+            if m > 0:
+                return f"{m}分"
+            return f"{s}秒"
+        if seconds >= 3600:
+            h, r = divmod(seconds, 3600)
+            m = r // 60
+            return f"{h}h {m}m" if m else f"{h}h"
+        m, s = divmod(seconds, 60)
+        if m > 0:
+            return f"{m}m"
+        return f"{s}s"
 
     def _target_text(self, now: datetime) -> str:
         if self.config.target is None:
@@ -138,6 +184,38 @@ class TimeMasterWidget(QMainWindow):
 
     def refresh_rows(self) -> None:
         now = datetime.now()
+        self._maybe_complete_focus(now)
+
+        if self._focus_active(now):
+            self.title_label.setText(self.t("title_focus"))
+            end = self._focus_end()
+            if end is None:
+                return
+            left_sec = max(0, int((end - now).total_seconds()))
+            lh, lr = divmod(left_sec, 3600)
+            lm, ls = divmod(lr, 60)
+            hms = f"{lh:02d}:{lm:02d}:{ls:02d}" if lh > 0 else f"{lm:02d}:{ls:02d}"
+            started = self.config.focus_started_at
+            if started is None:
+                return
+            elapsed = max(0.0, (now - started).total_seconds())
+            total = float(self.config.focus_duration_seconds)
+            prog = 0.0 if total <= 0 else min(1.0, elapsed / total)
+            self.target_row.set_row(self.t("focus_row", hms=hms), prog)
+
+            stats = load_focus_stats()
+            today_key = now.date().isoformat()
+            today_sec = int(day_stats_for(stats, today_key).get("seconds", 0))
+            self.day_row.set_row(self.t("focus_today", dur=self._format_short_duration(today_sec)), 0.0)
+
+            self.month_row.setVisible(False)
+            self.year_row.setVisible(False)
+            return
+
+        self.title_label.setText(self.t("title"))
+        self.month_row.setVisible(True)
+        self.year_row.setVisible(True)
+
         self.target_row.set_row(self._target_text(now), self._target_progress(now))
 
         day_progress = (now.hour * 3600 + now.minute * 60 + now.second) / 86400
@@ -176,6 +254,10 @@ class TimeMasterWidget(QMainWindow):
         settings_action = QAction(self.t("menu_settings"), self)
         settings_action.triggered.connect(self.open_settings_dialog)
         menu.addAction(settings_action)
+
+        stats_action = QAction(self.t("menu_stats"), self)
+        stats_action.triggered.connect(self.open_stats_dialog)
+        menu.addAction(stats_action)
 
         lang_menu = menu.addMenu(self.t("menu_lang"))
         zh_action = QAction(self.t("lang_zh"), self, checkable=True)

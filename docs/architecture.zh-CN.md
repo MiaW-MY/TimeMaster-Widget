@@ -26,7 +26,8 @@
 - 组织主卡片布局
 - 控制语言切换
 - 控制计时刷新
-- 控制右键菜单
+- 控制专注倒计时与完成结算
+- 控制右键菜单（含统计窗口入口）
 - 控制双击设置
 - 控制拖动行为
 - 应用语言相关布局参数
@@ -48,7 +49,9 @@ UI 组件层。
 
 - `ProgressBar`：自定义进度条绘制
 - `RowWidget`：每一条文字 + 进度条组合
-- `SettingsDialog`：设置弹窗
+- `SettingsDialog`：设置弹窗（含专注时长）
+- `StatsDialog`：专注统计独立窗口
+- `FireworksOverlay`：专注完成后的短暂烟花动画层
 - `CardFrame`：卡片背景与装饰图绘制
 - `load_pixmap()`：图片加载与裁切
 
@@ -69,9 +72,11 @@ UI 组件层。
 职责：
 
 - `AppConfig` 数据结构
-- 本地配置读写
+- 本地配置读写（`time_master_config.py`）
+- 专注统计读写（`time_master_focus_stats.json`）
 - 旧 JSON 配置迁移
 - 透明度和时间字段的解析与兜底
+- 专注会话过期后的自动结算（启动时）
 
 如果以后你要改：
 

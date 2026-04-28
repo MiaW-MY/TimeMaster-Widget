@@ -26,7 +26,8 @@ Responsibilities:
 - Organize the main card layout
 - Handle language switching
 - Handle timer refresh logic
-- Handle right-click menu behavior
+- Handle focus countdown and completion finalization
+- Handle right-click menu behavior (including the statistics window entry)
 - Handle double-click settings access
 - Handle drag behavior
 - Apply language-specific layout offsets
@@ -46,7 +47,9 @@ Responsibilities:
 
 - `ProgressBar`: custom bar rendering
 - `RowWidget`: one label + one bar
-- `SettingsDialog`: settings dialog
+- `SettingsDialog`: settings dialog (including focus duration)
+- `StatsDialog`: standalone focus statistics window
+- `FireworksOverlay`: short fireworks animation layer after a completed focus session
 - `CardFrame`: rounded card and decorative image painting
 - `load_pixmap()`: image loading and top-edge trimming
 
@@ -65,9 +68,11 @@ Configuration layer.
 Responsibilities:
 
 - `AppConfig` structure
-- Local config read/write
+- Local config read/write (`time_master_config.py`)
+- Focus statistics read/write (`time_master_focus_stats.json`)
 - Legacy JSON migration
 - Parsing and fallback behavior for config fields
+- Auto-finalize expired focus sessions on startup
 
 Use this file when you want to change:
 

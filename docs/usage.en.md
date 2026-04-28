@@ -46,6 +46,7 @@ You can also double-click these `.command` files in Finder on macOS.
 - Drag the widget with left click
 - Double-click to open settings
 - Right-click to open the menu
+- Open Statistics from the menu to review the last 30 days of focus data
 - Switch between Chinese and English from the menu
 - Quit from the menu
 
@@ -54,10 +55,13 @@ You can also double-click these `.command` files in Finder on macOS.
 The current widget supports:
 
 - Target date
+- Focus duration in minutes or hours (leave empty to skip starting a new session; saving starts immediately; minimum 1 minute)
 - Opacity
 - Interface language
 
 Settings are stored in the local `time_master_config.py`.
+
+Focus statistics are stored in `time_master_focus_stats.json` (per-day seconds and session counts). This file is ignored by Git by default.
 
 ## 5. Local Config Files
 
@@ -75,6 +79,8 @@ Common fields:
 - `WIDGET_ALPHA`
 - `TARGET_ISO`
 - `COUNTDOWN_START_ISO`
+- `FOCUS_DURATION_SECONDS`
+- `FOCUS_STARTED_ISO`
 
 ## 6. Common Issues
 

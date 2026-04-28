@@ -185,3 +185,4 @@ cython_debug/
 .run/
 time_master_config.py
 time_master.json
+time_master_focus_stats.json

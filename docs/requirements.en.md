@@ -21,6 +21,9 @@ The project is currently optimized for personal use, but the codebase has alread
 - Supports Chinese and English
 - Supports opacity adjustment
 - Supports persistent local configuration
+- Focus sessions: set duration in minutes or hours in the settings dialog; saving starts immediately; on successful completion a short fireworks animation plays, then the widget returns to the normal countdown view
+- Completed focus time is aggregated per calendar day (total seconds and session count)
+- Right-click menu opens a standalone Statistics window for the last 30 days (per-day duration and counts plus totals)
 
 ### 2.2 Interaction
 
@@ -30,15 +33,15 @@ The project is currently optimized for personal use, but the codebase has alread
 - Double-click to open settings
 - Right-click menu for:
   - Settings
+  - Focus statistics window
   - Language switching
   - Quit
 
 ### 2.3 Visual State
 
-- Finalized card size is `192 x 192`
+- Finalized card size is `173 x 173` (about 10% smaller than the earlier 192 design)
 - Rounded card with soft shadow and warm muted palette
 - Single cat decoration at the top-right
-- Three-cat decoration at the bottom
 - Chinese layout is the current visual baseline
 - English layout uses its own offset parameters so it can be tuned independently
 
@@ -71,5 +74,5 @@ The project is currently optimized for personal use, but the codebase has alread
 
 - Decide first whether a change targets Chinese only, English only, or both
 - For visual tweaks, update layout constants before touching business logic
-- Do not commit personal runtime state files to Git
+- Do not commit personal runtime state files to Git (including `time_master_focus_stats.json` and similar)
 - When adding major features, update this requirements document first
