@@ -135,6 +135,7 @@ def read_config() -> AppConfig:
     config = _load_config_from_py()
     if config.target is not None and config.countdown_start is None:
         config.countdown_start = datetime.now()
+        save_config(config)
     if config.focus_duration_seconds > 0 and config.focus_started_at is None:
         config = replace(config, focus_duration_seconds=0)
         save_config(config)

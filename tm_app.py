@@ -60,6 +60,12 @@ class TimeMasterWidget(QMainWindow):
         outer_layout.addWidget(self.card)
         self.setCentralWidget(outer)
 
+        self._expect_tap_after_fireworks = False
+        self._awaiting_click_after_fireworks = False
+        self.card.tap_gate.hide()
+        self.card.fireworks.animation_finished.connect(self._on_fireworks_finished)
+        self.card.tap_gate.clicked.connect(self._on_tap_gate_clicked)
+
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh_rows)
         self.timer.start(1000)
@@ -108,6 +114,20 @@ class TimeMasterWidget(QMainWindow):
     def open_stats_dialog(self) -> None:
         StatsDialog(self.strings(), self).exec()
 
+    def _on_fireworks_finished(self) -> None:
+        if not self._expect_tap_after_fireworks:
+            return
+        self._expect_tap_after_fireworks = False
+        self._awaiting_click_after_fireworks = True
+        self.card.tap_gate.set_message(self.t("tap_to_resume"))
+        self.card.tap_gate.show()
+        self.card.tap_gate.raise_()
+
+    def _on_tap_gate_clicked(self) -> None:
+        self.card.tap_gate.hide()
+        self._awaiting_click_after_fireworks = False
+        self.refresh_rows()
+
     def apply_settings(self, new_config: AppConfig) -> None:
         new_config.language = self.config.language
         self.config = new_config
@@ -137,6 +157,7 @@ class TimeMasterWidget(QMainWindow):
         record_focus_completion(dur)
         self.config = replace(self.config, focus_duration_seconds=0, focus_started_at=None)
         save_config(self.config)
+        self._expect_tap_after_fireworks = True
         self.card.fireworks.start_animation()
 
     def _format_short_duration(self, seconds: int) -> str:
@@ -172,17 +193,30 @@ class TimeMasterWidget(QMainWindow):
         return self.t("target_days", d=max(0, days))
 
     def _target_progress(self, now: datetime) -> float:
-        if self.config.target is None or self.config.countdown_start is None:
+        if self.config.target is None:
             return 0.0
         if now >= self.config.target:
             return 1.0
-        total = (self.config.target - self.config.countdown_start).total_seconds()
+        target = self.config.target
+        start = self.config.countdown_start
+        if start is not None and start < target:
+            total = (target - start).total_seconds()
+            if total > 0:
+                elapsed = (now - start).total_seconds()
+                return max(0.0, min(1.0, elapsed / total))
+        delta = target - now
+        days_left = delta.days + (1 if delta.seconds > 0 else 0)
+        days_left = max(1, days_left)
+        anchor = target - timedelta(days=days_left)
+        total = (target - anchor).total_seconds()
         if total <= 0:
             return 0.0
-        elapsed = (now - self.config.countdown_start).total_seconds()
+        elapsed = (now - anchor).total_seconds()
         return max(0.0, min(1.0, elapsed / total))
 
     def refresh_rows(self) -> None:
+        if self._awaiting_click_after_fireworks:
+            return
         now = datetime.now()
         self._maybe_complete_focus(now)
 

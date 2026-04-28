@@ -58,6 +58,11 @@ STRINGS = {
         "stats_col_count": "次数",
         "stats_total_time": "合计时长",
         "stats_total_count": "合计次数",
+        "stats_close": "关闭",
+        "tap_to_resume": "点击窗口继续",
+        "dlg_tab_countdown": "倒计时",
+        "dlg_tab_focus": "专注",
+        "dlg_tab_appearance": "外观",
     },
     "en": {
         "title": "Time Master",
@@ -93,6 +98,11 @@ STRINGS = {
         "stats_col_count": "Sessions",
         "stats_total_time": "Total duration",
         "stats_total_count": "Total sessions",
+        "stats_close": "Close",
+        "tap_to_resume": "Click to continue",
+        "dlg_tab_countdown": "Countdown",
+        "dlg_tab_focus": "Focus",
+        "dlg_tab_appearance": "Appearance",
     },
 }
 

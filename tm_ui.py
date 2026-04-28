@@ -9,10 +9,12 @@ from PySide6.QtWidgets import (
     QDialog,
     QFrame,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
     QPushButton,
     QSlider,
+    QTabWidget,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -81,6 +83,8 @@ class RowWidget(QWidget):
 
 
 class FireworksOverlay(QWidget):
+    animation_finished = Signal()
+
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
@@ -134,6 +138,7 @@ class FireworksOverlay(QWidget):
         if self._remaining <= 0:
             self._timer.stop()
             self.hide()
+            self.animation_finished.emit()
 
     def paintEvent(self, event) -> None:  # noqa: N802
         _ = event
@@ -148,6 +153,41 @@ class FireworksOverlay(QWidget):
             painter.setBrush(c)
             r = p["r"]
             painter.drawEllipse(QRectF(p["x"] - r, p["y"] - r, 2 * r, 2 * r))
+
+
+class ClickToResumeOverlay(QFrame):
+    clicked = Signal()
+
+    def __init__(self, message: str, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.setObjectName("TapGateOverlay")
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setStyleSheet(
+            f"""
+            #TapGateOverlay {{
+                background: rgba(35, 30, 28, 0.62);
+                border-radius: {CARD_RADIUS}px;
+            }}
+            """
+        )
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(12, 12, 12, 12)
+        lay.addStretch(1)
+        self._label = QLabel(message)
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label.setWordWrap(True)
+        self._label.setFont(QFont("Helvetica Neue", 12, QFont.Weight.Bold))
+        self._label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
+        lay.addWidget(self._label)
+        lay.addStretch(2)
+
+    def set_message(self, message: str) -> None:
+        self._label.setText(message)
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
 
 
 class SettingsDialog(QDialog):
@@ -201,6 +241,25 @@ class SettingsDialog(QDialog):
                 margin: -5px 0;
                 border-radius: 7px;
             }}
+            QTabWidget::pane {{
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 10px;
+                padding: 10px;
+                top: -1px;
+                background: {COL['surface']};
+            }}
+            QTabBar::tab {{
+                background: {COL['card']};
+                color: {COL['muted']};
+                padding: 8px 14px;
+                margin-right: 4px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+            }}
+            QTabBar::tab:selected {{
+                background: {COL['surface']};
+                color: {COL['text']};
+            }}
             """
         )
 
@@ -208,19 +267,30 @@ class SettingsDialog(QDialog):
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(10)
 
+        tabs = QTabWidget()
+        tabs.setDocumentMode(True)
+
+        page_cd = QWidget()
+        lay_cd = QVBoxLayout(page_cd)
+        lay_cd.setContentsMargins(4, 8, 4, 4)
+        lay_cd.setSpacing(8)
         date_label = QLabel(strings["dlg_date"])
         date_label.setFont(QFont("Helvetica Neue", 11))
-        layout.addWidget(date_label)
-
+        lay_cd.addWidget(date_label)
         self.date_edit = QLineEdit()
         now = datetime.now()
         self.date_edit.setText(config.target.strftime("%Y-%m-%d") if config.target else now.strftime("%Y-%m-%d"))
-        layout.addWidget(self.date_edit)
+        lay_cd.addWidget(self.date_edit)
+        lay_cd.addStretch(1)
+        tabs.addTab(page_cd, strings["dlg_tab_countdown"])
 
+        page_focus = QWidget()
+        lay_f = QVBoxLayout(page_focus)
+        lay_f.setContentsMargins(4, 8, 4, 4)
+        lay_f.setSpacing(8)
         focus_label = QLabel(strings["dlg_focus"])
         focus_label.setFont(QFont("Helvetica Neue", 11))
-        layout.addWidget(focus_label)
-
+        lay_f.addWidget(focus_label)
         focus_row = QHBoxLayout()
         self.focus_edit = QLineEdit()
         self.focus_edit.setPlaceholderText("25")
@@ -229,21 +299,29 @@ class SettingsDialog(QDialog):
         self.focus_unit.addItem(strings["dlg_focus_unit_min"], "min")
         self.focus_unit.addItem(strings["dlg_focus_unit_hr"], "hr")
         focus_row.addWidget(self.focus_unit)
-        layout.addLayout(focus_row)
-
+        lay_f.addLayout(focus_row)
         hint = QLabel(strings["dlg_focus_hint"])
         hint.setFont(QFont("Helvetica Neue", 9))
         hint.setWordWrap(True)
-        layout.addWidget(hint)
+        lay_f.addWidget(hint)
+        lay_f.addStretch(1)
+        tabs.addTab(page_focus, strings["dlg_tab_focus"])
 
+        page_app = QWidget()
+        lay_a = QVBoxLayout(page_app)
+        lay_a.setContentsMargins(4, 8, 4, 4)
+        lay_a.setSpacing(8)
         alpha_label = QLabel(strings["dlg_alpha"])
         alpha_label.setFont(QFont("Helvetica Neue", 11))
-        layout.addWidget(alpha_label)
-
+        lay_a.addWidget(alpha_label)
         self.alpha_slider = QSlider(Qt.Orientation.Horizontal)
         self.alpha_slider.setRange(35, 100)
         self.alpha_slider.setValue(int(config.alpha * 100))
-        layout.addWidget(self.alpha_slider)
+        lay_a.addWidget(self.alpha_slider)
+        lay_a.addStretch(1)
+        tabs.addTab(page_app, strings["dlg_tab_appearance"])
+
+        layout.addWidget(tabs)
 
         self.error_label = QLabel("")
         self.error_label.setStyleSheet(f"color: {COL['error']};")
@@ -369,17 +447,23 @@ class StatsDialog(QDialog):
         table.setHorizontalHeaderLabels(
             [strings["stats_col_date"], strings["stats_col_time"], strings["stats_col_count"]]
         )
+        table.setCornerButtonEnabled(False)
         table.verticalHeader().setVisible(False)
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
+        table.setShowGrid(True)
+        table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        table.setMinimumHeight(260)
+        hdr = table.horizontalHeader()
+        hdr.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         for r, (key, sec, cnt) in enumerate(rows):
             table.setItem(r, 0, QTableWidgetItem(key))
             table.setItem(r, 1, QTableWidgetItem(_format_duration_hms(sec, strings)))
             table.setItem(r, 2, QTableWidgetItem(str(cnt)))
-        table.resizeColumnsToContents()
-        layout.addWidget(table)
+        layout.addWidget(table, stretch=1)
 
-        close_btn = QPushButton(strings["dlg_ok"])
+        close_btn = QPushButton(strings["stats_close"])
         close_btn.setFont(QFont("Helvetica Neue", 11, QFont.Weight.Bold))
         close_btn.clicked.connect(self.accept)
         layout.addWidget(close_btn)
@@ -401,10 +485,13 @@ class CardFrame(QFrame):
         super().__init__(parent)
         self.top_pixmap: QPixmap | None = None
         self.fireworks = FireworksOverlay(self)
+        self.tap_gate = ClickToResumeOverlay("", self)
 
     def resizeEvent(self, event) -> None:  # noqa: N802
         super().resizeEvent(event)
-        self.fireworks.setGeometry(self.rect())
+        r = self.rect()
+        self.fireworks.setGeometry(r)
+        self.tap_gate.setGeometry(r)
 
     def paintEvent(self, event) -> None:  # noqa: N802
         _ = event
