@@ -156,7 +156,9 @@ class FireworksOverlay(QWidget):
         self._frozen = False
         self._freeze_on_end = False
 
-    def start_animation(self, duration_ms: int = 2600, *, freeze_on_end: bool = False) -> None:
+    def start_animation(
+        self, duration_ms: int = 2600, *, freeze_on_end: bool = False, burst_cy_ratio: float | None = None
+    ) -> None:
         self._frozen = False
         self._freeze_on_end = freeze_on_end
         self._particles = []
@@ -169,8 +171,9 @@ class FireworksOverlay(QWidget):
             w, h = max(1, CARD_W), max(1, CARD_H)
             self.resize(w, h)
         dim = float(min(w, h))
-        # Burst origin: slightly above geometric center — matches small card layout (title + content), not a large-window center.
-        cx, cy = w * 0.5, h * 0.42
+        # Burst origin: slightly above geometric center; optional ratio for completion screen (higher burst).
+        cy_r = 0.42 if burst_cy_ratio is None else max(0.18, min(0.55, burst_cy_ratio))
+        cx, cy = w * 0.5, h * cy_r
         # Scale motion to card size (velocities were tuned like a large canvas; on ~173px they fly out / clip on rounded corners).
         v_scale = max(0.45, min(1.15, dim / 173.0)) * 0.72
         g_scale = max(0.5, min(1.2, dim / 173.0))
@@ -326,18 +329,21 @@ class ClickToResumeOverlay(QFrame):
         self._label.setMaximumWidth(max(96, pw - 16))
 
     def update_pick_hint_geometry(self) -> None:
+        """Resize-safe: only adjust hint wrap width while in pick mode (do not clear pick mode here)."""
         if not self._pick_mode:
             return
         pw = self.parent().width() if self.parent() is not None else 173
         self._label.setMaximumWidth(max(96, pw - 16))
-        if not self._pick_mode:
-            return
+
+    def clear_pick_mode(self) -> None:
+        """Leave tap-to-continue overlay state (called when closing celebration)."""
         self._pick_mode = False
+        self._lay.setContentsMargins(12, 12, 12, 12)
         self._label.setFont(QFont("Helvetica Neue", 12, QFont.Weight.Bold))
         self._label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
         self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._apply_style_dark()
         self._label.setMaximumWidth(16777215)
+        self._apply_style_dark()
 
     def set_message(self, message: str) -> None:
         self._label.setText(message)

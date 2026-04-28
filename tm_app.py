@@ -143,20 +143,15 @@ class TimeMasterWidget(QMainWindow):
         label.setContentsMargins(0, 0, 0, 0)
         return label
 
-    def _apply_title_slot_main(self, *, special: bool | None = None) -> None:
-        if special is None:
-            now = datetime.now()
-            special = self._post_focus_celebration or self._focus_active(now)
-        if special:
-            self.title_label.setFixedWidth(CARD_CONTENT_W)
-            self.title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
-        else:
-            self.title_label.setFixedWidth(BAR_W)
-            self.title_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+    def _apply_title_slot_main(self) -> None:
+        self.title_label.setFixedWidth(BAR_W)
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.card_layout.setAlignment(self.title_label, Qt.AlignmentFlag.AlignHCenter)
 
-    def _set_card_vertical_balance(self, centered: bool) -> None:
-        """Main: no top stretch (avoids double layout spacing above first row). Focus/celebration: insert top stretch."""
+    def _set_card_vertical_balance(
+        self, centered: bool, *, top_ratio: int = 1, bottom_ratio: int = 1
+    ) -> None:
+        """Main: no top stretch. Focus/celebration: insert top stretch; optional asymmetric ratios (e.g. 2:1) pull content up."""
         bot = getattr(self, "_idx_stretch_bottom", None)
         if bot is None:
             return
@@ -165,8 +160,8 @@ class TimeMasterWidget(QMainWindow):
                 self.card_layout.insertStretch(1, 1)
                 self._idx_stretch_top = 1
                 self._idx_stretch_bottom = self.card_layout.count() - 1
-            self.card_layout.setStretch(self._idx_stretch_top, 1)
-            self.card_layout.setStretch(self._idx_stretch_bottom, 1)
+            self.card_layout.setStretch(self._idx_stretch_top, max(1, top_ratio))
+            self.card_layout.setStretch(self._idx_stretch_bottom, max(1, bottom_ratio))
         else:
             if self._idx_stretch_top is not None:
                 item = self.card_layout.takeAt(self._idx_stretch_top)
@@ -243,11 +238,10 @@ class TimeMasterWidget(QMainWindow):
         self.card.tap_gate.clear_pick_mode()
         self._reset_row_widgets_default()
         self.apply_language()
-        self.refresh_rows()
-
-    def _reset_row_widgets_default(self) -> None:
+        QTimer.singleShot(0, self.refresh_rows)
         for row in (self.target_row, self.day_row, self.month_row, self.year_row):
             row.reset_row_style()
+            row.setContentsMargins(0, 0, 0, 0)
         self.year_row.setVisible(True)
 
     def _interrupt_focus(self) -> None:
@@ -292,7 +286,7 @@ class TimeMasterWidget(QMainWindow):
         self.config = replace(self.config, focus_duration_seconds=0, focus_started_at=None)
         save_config(self.config)
         self._post_focus_celebration = True
-        self.card.fireworks.start_animation(freeze_on_end=True)
+        self.card.fireworks.start_animation(freeze_on_end=True, burst_cy_ratio=0.34)
         self.card.fireworks.lower()
         self.title_label.raise_()
         for w in (self.focus_body, self.day_row, self.month_row, self.year_row):
@@ -306,7 +300,7 @@ class TimeMasterWidget(QMainWindow):
         self.focus_interrupt_btn.setVisible(False)
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
         self._apply_title_slot_main()
-        self._set_card_vertical_balance(True)
+        self._set_card_vertical_balance(True, top_ratio=2, bottom_ratio=1)
         self.card_layout.setSpacing(5)
         self._fb_layout.setSpacing(6)
         text_w = CARD_CONTENT_W
@@ -349,6 +343,7 @@ class TimeMasterWidget(QMainWindow):
         self.target_row.set_label_text_alignment(Qt.AlignmentFlag.AlignHCenter)
         self.day_row.set_label_text_alignment(Qt.AlignmentFlag.AlignHCenter)
         self.month_row.set_label_text_alignment(Qt.AlignmentFlag.AlignHCenter)
+        self.month_row.setContentsMargins(0, 0, 0, 10)
 
         self.year_row.setVisible(False)
 
