@@ -350,7 +350,7 @@ class TimeMasterWidget(QMainWindow):
         save_config(self.config)
         self._post_focus_celebration = True
         self.card.fireworks.start_animation(freeze_on_end=True, burst_cy_ratio=0.34)
-        self.card.fireworks.lower()
+        self._stack_fireworks_below_celebration_content()
         self.title_label.raise_()
         for w in (self.focus_body, self.day_row, self.month_row, self.year_row):
             w.raise_()
@@ -358,6 +358,11 @@ class TimeMasterWidget(QMainWindow):
         self.card.tap_gate.set_pick_mode()
         self.card.tap_gate.show()
         self.card.tap_gate.raise_()
+
+    def _stack_fireworks_below_celebration_content(self) -> None:
+        """Particles must paint under text; never gate on isVisible (first frame can skip lower and cover copy)."""
+        self.card.fireworks.lower()
+        self.card.fireworks.stackUnder(self.title_label)
 
     def _render_celebration(self, now: datetime) -> None:
         self.focus_interrupt_btn.setVisible(False)
@@ -413,8 +418,7 @@ class TimeMasterWidget(QMainWindow):
 
         self.year_row.setVisible(False)
 
-        if self.card.fireworks.isVisible():
-            self.card.fireworks.lower()
+        self._stack_fireworks_below_celebration_content()
         self.celebration_tap_hint_label.setText(self.t("celebration_tap_hint"))
         self.celebration_tap_hint_label.setVisible(True)
         self._apply_celebration_tap_hint_appearance()
