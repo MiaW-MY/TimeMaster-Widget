@@ -675,7 +675,8 @@ class StatsDialog(QDialog):
         layout.addWidget(title)
 
         sub = QLabel(strings["stats_subtitle"])
-        sub.setFont(QFont("Helvetica Neue", 11))
+        sub.setFont(QFont("Helvetica Neue", 13, QFont.Weight.DemiBold))
+        sub.setStyleSheet(f"color: {COL['text']};")
         layout.addWidget(sub)
 
         stats = load_focus_stats()
@@ -697,7 +698,7 @@ class StatsDialog(QDialog):
             f"{strings['stats_total_time']}: {_format_duration_hms(total_sec, strings)}\n"
             f"{strings['stats_total_count']}: {total_cnt}"
         )
-        summary.setFont(QFont("Helvetica Neue", 11))
+        summary.setFont(QFont("Helvetica Neue", 13, QFont.Weight.DemiBold))
         summary.setStyleSheet(f"color: {COL['text']};")
         layout.addWidget(summary)
 
@@ -714,11 +715,14 @@ class StatsDialog(QDialog):
         table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         table.setMinimumHeight(260)
         hdr = table.horizontalHeader()
+        hdr.setFont(QFont("Helvetica Neue", 12, QFont.Weight.Bold))
         hdr.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        cell_font = QFont("Helvetica Neue", 10)
         for r, (key, sec, cnt) in enumerate(rows):
-            table.setItem(r, 0, QTableWidgetItem(key))
-            table.setItem(r, 1, QTableWidgetItem(_format_duration_hms(sec, strings)))
-            table.setItem(r, 2, QTableWidgetItem(str(cnt)))
+            for col, text in enumerate((key, _format_duration_hms(sec, strings), str(cnt))):
+                it = QTableWidgetItem(text)
+                it.setFont(cell_font)
+                table.setItem(r, col, it)
         layout.addWidget(table, stretch=1)
 
         close_btn = QPushButton(strings["stats_close"])

@@ -4,12 +4,12 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Any
 
-from qt_compat import PROJECT_ROOT
+from qt_compat import data_root
 from tm_resources import STRINGS
 
-CONFIG_PATH = PROJECT_ROOT / "time_master_config.py"
+CONFIG_PATH = data_root() / "time_master_config.py"
 LEGACY_JSON_PATH = CONFIG_PATH.with_suffix(".json")
-FOCUS_STATS_PATH = PROJECT_ROOT / "time_master_focus_stats.json"
+FOCUS_STATS_PATH = data_root() / "time_master_focus_stats.json"
 
 
 @dataclass

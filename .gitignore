@@ -1,3 +1,6 @@
+# macOS
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -180,7 +183,12 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# Project-local runtime files
+# Generated macOS iconset (icns is committed)
+assets/AppIcon.iconset/
+
+# Project-local caches
+.cache/
+
 .pyside6_vendor/
 .run/
 time_master_config.py

@@ -1,7 +1,7 @@
-from qt_compat import PROJECT_ROOT
+from qt_compat import resource_root
 
-ASSET_MASCOT = PROJECT_ROOT / "assets" / "mascot_cutout.png"
-ASSET_MASCOT_FALLBACK = PROJECT_ROOT / "assets" / "mascot.png"
+ASSET_MASCOT = resource_root() / "assets" / "mascot_cutout.png"
+ASSET_MASCOT_FALLBACK = resource_root() / "assets" / "mascot.png"
 
 CARD_W = 173
 CARD_H = 173

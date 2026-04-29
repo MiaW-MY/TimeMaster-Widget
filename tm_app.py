@@ -385,7 +385,7 @@ class TimeMasterWidget(QMainWindow):
     def _render_celebration(self, now: datetime) -> None:
         self.focus_interrupt_btn.setVisible(False)
         # Optical center vs top-right mascot: reserve space on the right (layout margins, not stylesheet).
-        self.title_label.setContentsMargins(0, 0, 40, 0)
+        self.title_label.setContentsMargins(0, 0, 10, 0)
         self.target_row.setContentsMargins(0, 0, 0, 0)
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
         self._apply_title_slot_main()
@@ -670,9 +670,9 @@ class TimeMasterWidget(QMainWindow):
             self.year_row.set_row(self.t("year_row", n=n_year), year_progress)
 
         if self.config.language == "en":
-            self.title_label.setContentsMargins(0, 0, 0, 3)
+            self.title_label.setContentsMargins(0, 0, 0, 5)
         else:
-            self.title_label.setContentsMargins(0, 0, 0, 0)
+            self.title_label.setContentsMargins(0, 0, 0, 2)
 
     def contextMenuEvent(self, event) -> None:  # noqa: N802
         menu = QMenu(self)
