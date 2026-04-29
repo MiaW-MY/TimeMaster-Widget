@@ -345,11 +345,9 @@ class TimeMasterWidget(QMainWindow):
             return
         if now < end:
             return
-        dur = self.config.focus_duration_seconds
-        record_focus_completion(dur)
-        self._celebration_session_sec = int(dur)
+        dur = int(self.config.focus_duration_seconds)
+        self._celebration_session_sec = dur
         self.config = replace(self.config, focus_duration_seconds=0, focus_started_at=None)
-        save_config(self.config)
         self._post_focus_celebration = True
         self.card.fireworks.start_animation(freeze_on_end=True, burst_cy_ratio=0.34)
         self._stack_fireworks_below_celebration_content()
@@ -358,6 +356,14 @@ class TimeMasterWidget(QMainWindow):
         self.card.tap_gate.set_pick_mode()
         self.card.tap_gate.show()
         self._raise_celebration_text_and_tap_layers()
+        QTimer.singleShot(0, lambda: self._persist_focus_completion_disk(dur))
+
+    def _persist_focus_completion_disk(self, dur: int) -> None:
+        """Disk I/O after the celebration frame paints (avoids UI stall at focus end)."""
+        record_focus_completion(dur)
+        save_config(self.config)
+        if self._post_focus_celebration:
+            self.refresh_rows()
 
     def _stack_fireworks_below_celebration_content(self) -> None:
         """Particles under all copy; title stylesheet changes can reshuffle siblings, so restack after layout updates."""
@@ -608,7 +614,8 @@ class TimeMasterWidget(QMainWindow):
             self.focus_body.setFixedWidth(cw)
             self.target_row.set_text_column_width(cw)
             self.focus_interrupt_btn.setFixedWidth(BAR_W - 8)
-            self._fb_layout.setSpacing(14)
+            # Extra 6px gap below timer+bar vs button (whole block reads higher relative to the button).
+            self._fb_layout.setSpacing(20)
             self._set_card_vertical_balance(True)
             self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignHCenter)
             self._fb_layout.setAlignment(self.focus_interrupt_btn, Qt.AlignmentFlag.AlignHCenter)
