@@ -163,18 +163,6 @@ class TimeMasterWidget(QMainWindow):
         """Shift 「Completed」 slightly left (~5px) via stylesheet margin."""
         self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent; margin-left: -5px;")
 
-    def _apply_en_main_content_horizontal_nudge(self, active: bool) -> None:
-        """English main card only: nudge the content column (focus_body + rows) 5px left."""
-        if active:
-            sheet = "margin-left: -5px;"
-            self.focus_body.setStyleSheet(sheet)
-            for w in (self.day_row, self.month_row, self.year_row):
-                w.setStyleSheet(sheet)
-        else:
-            self.focus_body.setStyleSheet("")
-            for w in (self.day_row, self.month_row, self.year_row):
-                w.setStyleSheet("")
-
     def _title_layout_profile(self) -> tuple[Qt.AlignmentFlag, Qt.AlignmentFlag]:
         """(card_layout alignment for title, title QLabel horizontal text alignment).
         Main: center the title slot in the card, keep text left-aligned in the slot.
@@ -352,7 +340,6 @@ class TimeMasterWidget(QMainWindow):
     def _render_celebration(self, now: datetime) -> None:
         self.focus_interrupt_btn.setVisible(False)
         self.title_label.setContentsMargins(0, 0, 0, 0)
-        self._apply_en_main_content_horizontal_nudge(False)
         self.target_row.setContentsMargins(0, 0, 0, 0)
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
         self._apply_title_slot_main()
@@ -551,7 +538,6 @@ class TimeMasterWidget(QMainWindow):
 
         if self._focus_active(now):
             self.title_label.setContentsMargins(0, 0, 0, 0)
-            self._apply_en_main_content_horizontal_nudge(False)
             self.title_label.setText(self.t("title_focus"))
             end = self._focus_end()
             if end is None:
@@ -627,7 +613,6 @@ class TimeMasterWidget(QMainWindow):
             self.title_label.setContentsMargins(0, 0, 0, 3)
         else:
             self.title_label.setContentsMargins(0, 0, 0, 0)
-        self._apply_en_main_content_horizontal_nudge(self.config.language == "en")
 
     def contextMenuEvent(self, event) -> None:  # noqa: N802
         menu = QMenu(self)
