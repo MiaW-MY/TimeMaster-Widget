@@ -728,14 +728,36 @@ class StatsDialog(QDialog):
 
 
 def _format_duration_hms(total_seconds: int, strings: dict[str, str]) -> str:
-    _ = strings
+    """Human-readable totals for the stats dialog (e.g. EN \"44 mins\", zh \"44分钟\")."""
+    is_zh = strings.get("stats_col_time") == "专注时长"
     if total_seconds <= 0:
-        return "0:00"
+        return "0 分钟" if is_zh else "0 mins"
     h, rem = divmod(total_seconds, 3600)
     m, s = divmod(rem, 60)
+    if is_zh:
+        if h > 0:
+            if m > 0:
+                return f"{h}小时{m}分钟"
+            if s > 0:
+                return f"{h}小时{s}秒"
+            return f"{h}小时"
+        if m > 0:
+            return f"{m}分钟"
+        return f"{s}秒"
+    hp = "hr" if h == 1 else "hrs"
     if h > 0:
-        return f"{h}:{m:02d}:{s:02d}"
-    return f"{m}:{s:02d}"
+        if m > 0:
+            mp = "min" if m == 1 else "mins"
+            return f"{h} {hp} {m} {mp}"
+        if s > 0:
+            sp = "sec" if s == 1 else "secs"
+            return f"{h} {hp} {s} {sp}"
+        return f"{h} {hp}"
+    if m > 0:
+        mp = "min" if m == 1 else "mins"
+        return f"{m} {mp}"
+    sp = "sec" if s == 1 else "secs"
+    return f"{s} {sp}"
 
 
 class CardFrame(QFrame):

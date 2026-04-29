@@ -178,17 +178,21 @@ class TimeMasterWidget(QMainWindow):
 
     def _title_layout_profile(self) -> tuple[Qt.AlignmentFlag, Qt.AlignmentFlag]:
         """(card_layout alignment for title, title QLabel horizontal text alignment).
-        Main: center the title slot, text left in slot. Focus: center both. Celebration: left-align title in card so copy clears the top-right mascot."""
+        Main: center the title slot, text left in slot. Focus/celebration: center slot and text.
+        Celebration reserves right margin on the label so HCenter clears the top-right mascot."""
         now = datetime.now()
         if self._post_focus_celebration:
-            return Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, Qt.AlignmentFlag.AlignLeft
+            return Qt.AlignmentFlag.AlignHCenter, Qt.AlignmentFlag.AlignHCenter
         if self._focus_active(now):
             return Qt.AlignmentFlag.AlignHCenter, Qt.AlignmentFlag.AlignHCenter
         return Qt.AlignmentFlag.AlignHCenter, Qt.AlignmentFlag.AlignLeft
 
     def _apply_title_slot_main(self) -> None:
         card_align, text_h = self._title_layout_profile()
-        self.title_label.setFixedWidth(BAR_W)
+        if self._post_focus_celebration:
+            self.title_label.setFixedWidth(CARD_CONTENT_W)
+        else:
+            self.title_label.setFixedWidth(BAR_W)
         self.title_label.setAlignment(text_h | Qt.AlignmentFlag.AlignVCenter)
         self.card_layout.setAlignment(self.title_label, card_align)
 
@@ -380,7 +384,8 @@ class TimeMasterWidget(QMainWindow):
 
     def _render_celebration(self, now: datetime) -> None:
         self.focus_interrupt_btn.setVisible(False)
-        self.title_label.setContentsMargins(8, 0, 0, 0)
+        # Optical center vs top-right mascot: reserve space on the right (layout margins, not stylesheet).
+        self.title_label.setContentsMargins(0, 0, 40, 0)
         self.target_row.setContentsMargins(0, 0, 0, 0)
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
         self._apply_title_slot_main()
