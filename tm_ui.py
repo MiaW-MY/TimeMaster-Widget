@@ -121,8 +121,8 @@ class RowWidget(QWidget):
     def set_label_text_alignment(self, horizontal: Qt.AlignmentFlag) -> None:
         self.label.setAlignment(horizontal | Qt.AlignmentFlag.AlignTop)
 
-    def set_label_point_size(self, pt: int) -> None:
-        self.label.setFont(QFont("Helvetica Neue", pt))
+    def set_label_point_size(self, pt: int, weight: QFont.Weight = QFont.Weight.Normal) -> None:
+        self.label.setFont(QFont("Helvetica Neue", pt, weight))
 
     def set_label_muted(self, muted: bool) -> None:
         color = COL["muted"] if muted else COL["text"]

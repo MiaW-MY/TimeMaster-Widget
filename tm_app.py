@@ -166,12 +166,12 @@ class TimeMasterWidget(QMainWindow):
         )
 
     def _apply_celebration_tap_hint_appearance(self) -> None:
-        """Celebration-only bottom hint: 11pt bold italic, nudged 2px down."""
-        f = QFont("Helvetica Neue", 11, QFont.Weight.Bold)
+        """Celebration-only bottom hint: 12pt bold italic, nudged 8px down."""
+        f = QFont("Helvetica Neue", 12, QFont.Weight.Bold)
         f.setItalic(True)
         self.celebration_tap_hint_label.setFont(f)
         self.celebration_tap_hint_label.setStyleSheet(
-            f"color: {COL['muted']}; background: transparent; margin-top: 2px;"
+            f"color: {COL['muted']}; background: transparent; margin-top: 8px;"
         )
 
     def _reset_celebration_tap_hint_appearance(self) -> None:
@@ -414,7 +414,7 @@ class TimeMasterWidget(QMainWindow):
         self.month_row.setVisible(True)
         self.month_row.set_bar_visible(False)
         self.month_row.set_label_muted(True)
-        self.month_row.set_label_point_size(12)
+        self.month_row.set_label_point_size(11, QFont.Weight.Bold)
         self.month_row.set_row(self.t("celebration_today_sub", today=today_txt), 0.0)
 
         self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignHCenter)
