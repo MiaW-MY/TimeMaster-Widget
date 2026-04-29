@@ -47,6 +47,7 @@ class TimeMasterWidget(QMainWindow):
 
         self._post_focus_celebration = False
         self._celebration_session_sec = 0
+        self._celebration_bottom_reserve: QWidget | None = None
 
         self.top_mascot = load_pixmap((ASSET_MASCOT, ASSET_MASCOT_FALLBACK), 31)
 
@@ -108,11 +109,11 @@ class TimeMasterWidget(QMainWindow):
         self._fb_layout.addWidget(self.target_row, alignment=Qt.AlignmentFlag.AlignHCenter)
         self._fb_layout.addWidget(self.focus_interrupt_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
 
-        self.card_layout.addWidget(self.title_label, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-        self.card_layout.addWidget(self.focus_body, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-        self.card_layout.addWidget(self.day_row, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-        self.card_layout.addWidget(self.month_row, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-        self.card_layout.addWidget(self.year_row, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        self.card_layout.addWidget(self.title_label, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        self.card_layout.addWidget(self.focus_body, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        self.card_layout.addWidget(self.day_row, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        self.card_layout.addWidget(self.month_row, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        self.card_layout.addWidget(self.year_row, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         self.card_layout.addStretch(1)
         self._idx_stretch_top: int | None = None
         self._idx_stretch_bottom = self.card_layout.count() - 1
@@ -143,14 +144,40 @@ class TimeMasterWidget(QMainWindow):
         label.setContentsMargins(0, 0, 0, 0)
         return label
 
+    def _style_title_label_default(self) -> None:
+        self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
+
+    def _style_title_label_celebration_nudge(self) -> None:
+        """Shift 「Completed」 slightly left (~5px) via stylesheet margin."""
+        self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent; margin-left: -5px;")
+
+    def _ensure_celebration_bottom_reserve(self) -> None:
+        """Reserve a strip at the bottom of the card so celebration copy and tap hint do not overlap."""
+        if self._celebration_bottom_reserve is not None:
+            return
+        self._celebration_bottom_reserve = QWidget(self.card)
+        self._celebration_bottom_reserve.setFixedHeight(30)
+        self._celebration_bottom_reserve.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.card_layout.insertWidget(self._idx_stretch_bottom, self._celebration_bottom_reserve)
+        self._idx_stretch_bottom = self.card_layout.count() - 1
+
+    def _clear_celebration_bottom_reserve(self) -> None:
+        if self._celebration_bottom_reserve is None:
+            return
+        self.card_layout.removeWidget(self._celebration_bottom_reserve)
+        self._celebration_bottom_reserve.deleteLater()
+        self._celebration_bottom_reserve = None
+        self._idx_stretch_bottom = self.card_layout.count() - 1
+
     def _title_layout_profile(self) -> tuple[Qt.AlignmentFlag, Qt.AlignmentFlag]:
-        """(card_layout alignment for title, title QLabel horizontal alignment). Main = left pillar; focus & celebration = centered."""
+        """(card_layout alignment for title, title QLabel horizontal text alignment).
+        Main: center the title slot in the card, keep text left-aligned in the slot.
+        Focus & celebration: center the slot and center the title text."""
         now = datetime.now()
         if self._post_focus_celebration or self._focus_active(now):
             ha = Qt.AlignmentFlag.AlignHCenter
             return ha, ha
-        la = Qt.AlignmentFlag.AlignLeft
-        return la, la
+        return Qt.AlignmentFlag.AlignHCenter, Qt.AlignmentFlag.AlignLeft
 
     def _apply_title_slot_main(self) -> None:
         card_align, text_h = self._title_layout_profile()
@@ -209,6 +236,10 @@ class TimeMasterWidget(QMainWindow):
         else:
             self.title_label.setText(self.t("title"))
         self._apply_title_slot_main()
+        if self._post_focus_celebration:
+            self._style_title_label_celebration_nudge()
+        else:
+            self._style_title_label_default()
 
     def set_language(self, language: str) -> None:
         if language not in STRINGS:
@@ -239,6 +270,8 @@ class TimeMasterWidget(QMainWindow):
     def _exit_focus_celebration(self) -> None:
         self._post_focus_celebration = False
         self._celebration_session_sec = 0
+        self._clear_celebration_bottom_reserve()
+        self._set_card_vertical_balance(False)
         self.card_layout.setSpacing(4)
         self._apply_title_slot_main()
         self.focus_body.setFixedWidth(BAR_W)
@@ -361,11 +394,13 @@ class TimeMasterWidget(QMainWindow):
 
         if self.card.fireworks.isVisible():
             self.card.fireworks.lower()
+        self._ensure_celebration_bottom_reserve()
         self.title_label.raise_()
         for w in (self.focus_body, self.day_row, self.month_row):
             w.raise_()
         self.card.tap_gate.raise_()
         self.card.tap_gate.update_pick_hint_geometry()
+        self._style_title_label_celebration_nudge()
 
     def _format_focus_remaining(self, left_sec: int) -> str:
         lh, lr = divmod(int(left_sec), 3600)
@@ -535,7 +570,7 @@ class TimeMasterWidget(QMainWindow):
         self.card_layout.setSpacing(4)
         self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignLeft)
         self._fb_layout.setAlignment(self.focus_interrupt_btn, Qt.AlignmentFlag.AlignHCenter)
-        self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignLeft)
+        self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
         self._apply_title_slot_main()
         self.focus_interrupt_btn.setVisible(False)
         self._reset_row_widgets_default()

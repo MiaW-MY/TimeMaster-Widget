@@ -311,7 +311,7 @@ class ClickToResumeOverlay(QFrame):
     def set_pick_mode(self, hint: str) -> None:
         """Full-card click target; hint shown small at bottom (fireworks stay visible underneath)."""
         self._pick_mode = True
-        self._lay.setContentsMargins(12, 12, 12, 40)
+        self._lay.setContentsMargins(12, 12, 12, 56)
         self.setStyleSheet(
             f"""
             #TapGateOverlay {{
