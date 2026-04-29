@@ -160,11 +160,8 @@ class TimeMasterWidget(QMainWindow):
         self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
 
     def _style_title_label_celebration_nudge(self) -> None:
-        """Celebration only: reserve the top-right mascot band so centered title sits clearly left of the cat."""
-        # Mascot ~31px + 4px inset from card edge; asymmetric padding-right pulls HCenter text left by ~half that value.
-        self.title_label.setStyleSheet(
-            f"color: {COL['text']}; background: transparent; padding-right: 36px; padding-left: 0px; margin-bottom: -10px;"
-        )
+        """Celebration only: vertical nudge for middle block (title x-position uses card_layout alignment)."""
+        self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent; margin-bottom: -10px;")
 
     def _apply_celebration_tap_hint_appearance(self) -> None:
         """Celebration-only bottom hint: 12pt bold italic, nudged 8px down."""
@@ -181,12 +178,12 @@ class TimeMasterWidget(QMainWindow):
 
     def _title_layout_profile(self) -> tuple[Qt.AlignmentFlag, Qt.AlignmentFlag]:
         """(card_layout alignment for title, title QLabel horizontal text alignment).
-        Main: center the title slot in the card, keep text left-aligned in the slot.
-        Focus & celebration: center the slot and center the title text."""
+        Main: center the title slot, text left in slot. Focus: center both. Celebration: left-align title in card so copy clears the top-right mascot."""
         now = datetime.now()
-        if self._post_focus_celebration or self._focus_active(now):
-            ha = Qt.AlignmentFlag.AlignHCenter
-            return ha, ha
+        if self._post_focus_celebration:
+            return Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, Qt.AlignmentFlag.AlignLeft
+        if self._focus_active(now):
+            return Qt.AlignmentFlag.AlignHCenter, Qt.AlignmentFlag.AlignHCenter
         return Qt.AlignmentFlag.AlignHCenter, Qt.AlignmentFlag.AlignLeft
 
     def _apply_title_slot_main(self) -> None:
@@ -291,6 +288,7 @@ class TimeMasterWidget(QMainWindow):
         self._celebration_session_sec = 0
         self.celebration_tap_hint_label.setVisible(False)
         self.focus_body.setContentsMargins(0, 0, 0, 0)
+        self.title_label.setContentsMargins(0, 0, 0, 0)
         self._reset_celebration_tap_hint_appearance()
         self._set_card_vertical_balance(False)
         self.card_layout.setSpacing(4)
@@ -382,7 +380,7 @@ class TimeMasterWidget(QMainWindow):
 
     def _render_celebration(self, now: datetime) -> None:
         self.focus_interrupt_btn.setVisible(False)
-        self.title_label.setContentsMargins(0, 0, 0, 0)
+        self.title_label.setContentsMargins(8, 0, 0, 0)
         self.target_row.setContentsMargins(0, 0, 0, 0)
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
         self._apply_title_slot_main()
