@@ -160,9 +160,10 @@ class TimeMasterWidget(QMainWindow):
         self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
 
     def _style_title_label_celebration_nudge(self) -> None:
-        """Celebration only: shift centered title ~4px left (margin-left is ignored for HCenter text; use asymmetric padding)."""
+        """Celebration only: reserve the top-right mascot band so centered title sits clearly left of the cat."""
+        # Mascot ~31px + 4px inset from card edge; asymmetric padding-right pulls HCenter text left by ~half that value.
         self.title_label.setStyleSheet(
-            f"color: {COL['text']}; background: transparent; padding-right: 8px; padding-left: 0px; margin-bottom: -10px;"
+            f"color: {COL['text']}; background: transparent; padding-right: 36px; padding-left: 0px; margin-bottom: -10px;"
         )
 
     def _apply_celebration_tap_hint_appearance(self) -> None:
