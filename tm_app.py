@@ -537,6 +537,8 @@ class TimeMasterWidget(QMainWindow):
         if now >= self.config.target:
             return self.t("target_done")
         d = self._target_calendar_days_remaining(now)
+        if self.config.language == "en" and d == 1:
+            return self.t("target_day", d=max(0, d))
         return self.t("target_days", d=max(0, d))
 
     def _target_progress(self, now: datetime) -> float:
@@ -641,12 +643,20 @@ class TimeMasterWidget(QMainWindow):
 
         last_day = calendar.monthrange(now.year, now.month)[1]
         month_progress = (now.day - 1 + day_progress) / last_day
-        self.month_row.set_row(self.t("month_row", n=last_day - now.day), month_progress)
+        n_month = last_day - now.day
+        if self.config.language == "en" and n_month == 1:
+            self.month_row.set_row(self.t("month_day", n=n_month), month_progress)
+        else:
+            self.month_row.set_row(self.t("month_row", n=n_month), month_progress)
 
         total_year_days = 366 if calendar.isleap(now.year) else 365
         day_of_year = now.timetuple().tm_yday
         year_progress = (day_of_year - 1 + day_progress) / total_year_days
-        self.year_row.set_row(self.t("year_row", n=total_year_days - day_of_year), year_progress)
+        n_year = total_year_days - day_of_year
+        if self.config.language == "en" and n_year == 1:
+            self.year_row.set_row(self.t("year_day", n=n_year), year_progress)
+        else:
+            self.year_row.set_row(self.t("year_row", n=n_year), year_progress)
 
         if self.config.language == "en":
             self.title_label.setContentsMargins(0, 0, 0, 3)
