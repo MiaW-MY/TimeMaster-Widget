@@ -160,9 +160,9 @@ class TimeMasterWidget(QMainWindow):
         self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
 
     def _style_title_label_celebration_nudge(self) -> None:
-        """Celebration only: title 4px left; pull middle block up 10px via title margin (no negative focus_body margin — that clips row labels)."""
+        """Celebration only: shift centered title ~4px left (margin-left is ignored for HCenter text; use asymmetric padding)."""
         self.title_label.setStyleSheet(
-            f"color: {COL['text']}; background: transparent; margin-left: -4px; margin-bottom: -10px;"
+            f"color: {COL['text']}; background: transparent; padding-right: 8px; padding-left: 0px; margin-bottom: -10px;"
         )
 
     def _apply_celebration_tap_hint_appearance(self) -> None:
