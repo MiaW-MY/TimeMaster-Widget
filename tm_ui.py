@@ -79,12 +79,24 @@ class RowWidget(QWidget):
         self._bar_h = QHBoxLayout(self._bar_row)
         self._bar_h.setContentsMargins(0, 0, 0, 0)
         self._bar_h.setSpacing(0)
-        self._bar_h.addStretch(1)
-        self._bar_h.addWidget(self.bar, alignment=Qt.AlignmentFlag.AlignVCenter)
-        self._bar_h.addStretch(1)
+        self._sync_bar_row_layout(BAR_W)
         self.setFixedWidth(BAR_W)
         layout.addWidget(self.label)
         layout.addWidget(self._bar_row)
+
+    def _sync_bar_row_layout(self, column_width: int) -> None:
+        """Narrow column (≤ BAR_W): bar left-aligned so extra width extends right. Wider: bar centered."""
+        while self._bar_h.count():
+            item = self._bar_h.takeAt(0)
+            if item is not None:
+                del item
+        if column_width <= BAR_W:
+            self._bar_h.addWidget(self.bar, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            self._bar_h.addStretch(1)
+        else:
+            self._bar_h.addStretch(1)
+            self._bar_h.addWidget(self.bar, alignment=Qt.AlignmentFlag.AlignVCenter)
+            self._bar_h.addStretch(1)
 
     def set_row(self, text: str, value: float) -> None:
         self.label.setText(text)
@@ -129,6 +141,7 @@ class RowWidget(QWidget):
             self.bar.setFixedSize(BAR_W, BAR_H)
             self._bar_row.setMinimumWidth(0)
             self._bar_row.setMaximumWidth(16777215)
+            self._sync_bar_row_layout(BAR_W)
             return
         self.setFixedWidth(width)
         self.label.setMinimumWidth(width)
@@ -137,6 +150,7 @@ class RowWidget(QWidget):
         self.bar.setFixedSize(bar_w, BAR_H)
         self._bar_row.setMinimumWidth(width)
         self._bar_row.setMaximumWidth(width)
+        self._sync_bar_row_layout(width)
 
 
 class FireworksOverlay(QWidget):
