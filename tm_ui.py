@@ -308,10 +308,11 @@ class ClickToResumeOverlay(QFrame):
             """
         )
 
-    def set_pick_mode(self, hint: str) -> None:
-        """Full-card click target; hint shown small at bottom (fireworks stay visible underneath)."""
+    def set_pick_mode(self, _hint_unused: str = "") -> None:
+        """Full-card transparent click layer; hint text is shown in the main card layout (localized)."""
+        _ = _hint_unused
         self._pick_mode = True
-        self._lay.setContentsMargins(12, 12, 12, 56)
+        self._lay.setContentsMargins(12, 12, 12, 12)
         self.setStyleSheet(
             f"""
             #TapGateOverlay {{
@@ -320,25 +321,19 @@ class ClickToResumeOverlay(QFrame):
             }}
             """
         )
-        self._label.setText(hint)
-        self._label.setFont(QFont("Helvetica Neue", 9))
-        self._label.setStyleSheet(f"color: {COL['muted']}; background: transparent;")
-        self._label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
-        self._label.setWordWrap(True)
-        pw = self.parent().width() if self.parent() is not None else 173
-        self._label.setMaximumWidth(max(120, pw - 20))
+        self._label.setText("")
+        self._label.setVisible(False)
 
     def update_pick_hint_geometry(self) -> None:
-        """Resize-safe: only adjust hint wrap width while in pick mode (do not clear pick mode here)."""
+        """Resize hook; celebration tap hint is laid out on the card, not this overlay."""
         if not self._pick_mode:
             return
-        pw = self.parent().width() if self.parent() is not None else 173
-        self._label.setMaximumWidth(max(120, pw - 20))
 
     def clear_pick_mode(self) -> None:
         """Leave tap-to-continue overlay state (called when closing celebration)."""
         self._pick_mode = False
         self._lay.setContentsMargins(12, 12, 12, 12)
+        self._label.setVisible(True)
         self._label.setFont(QFont("Helvetica Neue", 12, QFont.Weight.Bold))
         self._label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
         self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)

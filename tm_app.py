@@ -8,6 +8,7 @@ from PySide6.QtGui import QAction, QColor, QFont
 from PySide6.QtWidgets import (
     QApplication,
     QGraphicsDropShadowEffect,
+    QLabel,
     QMainWindow,
     QMenu,
     QPushButton,
@@ -47,7 +48,6 @@ class TimeMasterWidget(QMainWindow):
 
         self._post_focus_celebration = False
         self._celebration_session_sec = 0
-        self._celebration_bottom_reserve: QWidget | None = None
 
         self.top_mascot = load_pixmap((ASSET_MASCOT, ASSET_MASCOT_FALLBACK), 31)
 
@@ -114,6 +114,18 @@ class TimeMasterWidget(QMainWindow):
         self.card_layout.addWidget(self.day_row, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         self.card_layout.addWidget(self.month_row, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         self.card_layout.addWidget(self.year_row, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        self.celebration_tap_hint_label = QLabel()
+        self.celebration_tap_hint_label.setVisible(False)
+        self.celebration_tap_hint_label.setWordWrap(False)
+        self.celebration_tap_hint_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        self.celebration_tap_hint_label.setFont(QFont("Helvetica Neue", 9))
+        self.celebration_tap_hint_label.setStyleSheet(f"color: {COL['muted']}; background: transparent;")
+        self.celebration_tap_hint_label.setMaximumWidth(CARD_CONTENT_W)
+        self.celebration_tap_hint_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.card_layout.addWidget(
+            self.celebration_tap_hint_label,
+            alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop,
+        )
         self.card_layout.addStretch(1)
         self._idx_stretch_top: int | None = None
         self._idx_stretch_bottom = self.card_layout.count() - 1
@@ -151,23 +163,17 @@ class TimeMasterWidget(QMainWindow):
         """Shift 「Completed」 slightly left (~5px) via stylesheet margin."""
         self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent; margin-left: -5px;")
 
-    def _ensure_celebration_bottom_reserve(self) -> None:
-        """Reserve a strip at the bottom of the card so celebration copy and tap hint do not overlap."""
-        if self._celebration_bottom_reserve is not None:
-            return
-        self._celebration_bottom_reserve = QWidget(self.card)
-        self._celebration_bottom_reserve.setFixedHeight(30)
-        self._celebration_bottom_reserve.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        self.card_layout.insertWidget(self._idx_stretch_bottom, self._celebration_bottom_reserve)
-        self._idx_stretch_bottom = self.card_layout.count() - 1
-
-    def _clear_celebration_bottom_reserve(self) -> None:
-        if self._celebration_bottom_reserve is None:
-            return
-        self.card_layout.removeWidget(self._celebration_bottom_reserve)
-        self._celebration_bottom_reserve.deleteLater()
-        self._celebration_bottom_reserve = None
-        self._idx_stretch_bottom = self.card_layout.count() - 1
+    def _apply_en_main_content_horizontal_nudge(self, active: bool) -> None:
+        """English main card only: nudge the content column (focus_body + rows) 5px left."""
+        if active:
+            sheet = "margin-left: -5px;"
+            self.focus_body.setStyleSheet(sheet)
+            for w in (self.day_row, self.month_row, self.year_row):
+                w.setStyleSheet(sheet)
+        else:
+            self.focus_body.setStyleSheet("")
+            for w in (self.day_row, self.month_row, self.year_row):
+                w.setStyleSheet("")
 
     def _title_layout_profile(self) -> tuple[Qt.AlignmentFlag, Qt.AlignmentFlag]:
         """(card_layout alignment for title, title QLabel horizontal text alignment).
@@ -217,6 +223,7 @@ class TimeMasterWidget(QMainWindow):
         self.card_layout.setAlignment(self.day_row, horizontal)
         self.card_layout.setAlignment(self.month_row, horizontal)
         self.card_layout.setAlignment(self.year_row, horizontal)
+        self.card_layout.setAlignment(self.celebration_tap_hint_label, horizontal)
 
     def strings(self) -> dict[str, str]:
         return STRINGS[self.config.language]
@@ -238,6 +245,7 @@ class TimeMasterWidget(QMainWindow):
         self._apply_title_slot_main()
         if self._post_focus_celebration:
             self._style_title_label_celebration_nudge()
+            self.celebration_tap_hint_label.setText(self.t("celebration_tap_hint"))
         else:
             self._style_title_label_default()
 
@@ -270,7 +278,7 @@ class TimeMasterWidget(QMainWindow):
     def _exit_focus_celebration(self) -> None:
         self._post_focus_celebration = False
         self._celebration_session_sec = 0
-        self._clear_celebration_bottom_reserve()
+        self.celebration_tap_hint_label.setVisible(False)
         self._set_card_vertical_balance(False)
         self.card_layout.setSpacing(4)
         self._apply_title_slot_main()
@@ -337,12 +345,15 @@ class TimeMasterWidget(QMainWindow):
         for w in (self.focus_body, self.day_row, self.month_row, self.year_row):
             w.raise_()
         self.focus_interrupt_btn.setVisible(False)
-        self.card.tap_gate.set_pick_mode(self.t("celebration_tap_hint"))
+        self.card.tap_gate.set_pick_mode()
         self.card.tap_gate.show()
         self.card.tap_gate.raise_()
 
     def _render_celebration(self, now: datetime) -> None:
         self.focus_interrupt_btn.setVisible(False)
+        self.title_label.setContentsMargins(0, 0, 0, 0)
+        self._apply_en_main_content_horizontal_nudge(False)
+        self.target_row.setContentsMargins(0, 0, 0, 0)
         self._set_main_rows_layout_alignment(Qt.AlignmentFlag.AlignHCenter)
         self._apply_title_slot_main()
         self._set_card_vertical_balance(True, top_ratio=1, bottom_ratio=1)
@@ -388,17 +399,19 @@ class TimeMasterWidget(QMainWindow):
         self.target_row.set_label_text_alignment(Qt.AlignmentFlag.AlignHCenter)
         self.day_row.set_label_text_alignment(Qt.AlignmentFlag.AlignHCenter)
         self.month_row.set_label_text_alignment(Qt.AlignmentFlag.AlignHCenter)
-        self.month_row.setContentsMargins(0, 0, 0, 20)
+        self.month_row.setContentsMargins(0, 0, 0, 6)
 
         self.year_row.setVisible(False)
 
         if self.card.fireworks.isVisible():
             self.card.fireworks.lower()
-        self._ensure_celebration_bottom_reserve()
+        self.celebration_tap_hint_label.setText(self.t("celebration_tap_hint"))
+        self.celebration_tap_hint_label.setVisible(True)
         self.title_label.raise_()
         for w in (self.focus_body, self.day_row, self.month_row):
             w.raise_()
         self.card.tap_gate.raise_()
+        self.celebration_tap_hint_label.raise_()
         self.card.tap_gate.update_pick_hint_geometry()
         self._style_title_label_celebration_nudge()
 
@@ -482,16 +495,27 @@ class TimeMasterWidget(QMainWindow):
             return f"{m}m"
         return f"{s}s"
 
+    def _target_calendar_days_remaining(self, now: datetime) -> int:
+        """Calendar days from today's date to target's date (date-only semantics).
+        If target falls on a later calendar day, return that difference.
+        If still on the same calendar day but before target moment, return 1."""
+        target = self.config.target
+        if target is None or now >= target:
+            return 0
+        today_d = now.date()
+        target_d = target.date()
+        d = (target_d - today_d).days
+        if d <= 0:
+            return 1
+        return d
+
     def _target_text(self, now: datetime) -> str:
         if self.config.target is None:
             return self.t("target_hint")
         if now >= self.config.target:
             return self.t("target_done")
-        delta = self.config.target - now
-        days = delta.days
-        if delta.seconds > 0:
-            days += 1
-        return self.t("target_days", d=max(0, days))
+        d = self._target_calendar_days_remaining(now)
+        return self.t("target_days", d=max(0, d))
 
     def _target_progress(self, now: datetime) -> float:
         if self.config.target is None:
@@ -505,8 +529,7 @@ class TimeMasterWidget(QMainWindow):
             if total > 0:
                 elapsed = (now - start).total_seconds()
                 return max(0.0, min(1.0, elapsed / total))
-        delta = target - now
-        days_left = delta.days + (1 if delta.seconds > 0 else 0)
+        days_left = self._target_calendar_days_remaining(now)
         days_left = max(1, days_left)
         anchor = target - timedelta(days=days_left)
         total = (target - anchor).total_seconds()
@@ -527,6 +550,8 @@ class TimeMasterWidget(QMainWindow):
             return
 
         if self._focus_active(now):
+            self.title_label.setContentsMargins(0, 0, 0, 0)
+            self._apply_en_main_content_horizontal_nudge(False)
             self.title_label.setText(self.t("title_focus"))
             end = self._focus_end()
             if end is None:
@@ -550,11 +575,12 @@ class TimeMasterWidget(QMainWindow):
             self.target_row.set_column_spacing(6)
             self.target_row.set_row(self.t("focus_row", rem=rem), prog)
             self.target_row.set_bar_visible(True)
+            self.target_row.setContentsMargins(0, -4, 0, 0)
 
             cw = CARD_CONTENT_W
             self.focus_body.setFixedWidth(cw)
             self.target_row.set_text_column_width(cw)
-            self.focus_interrupt_btn.setFixedWidth(BAR_W)
+            self.focus_interrupt_btn.setFixedWidth(BAR_W - 8)
             self._fb_layout.setSpacing(14)
             self._set_card_vertical_balance(True)
             self._fb_layout.setAlignment(self.target_row, Qt.AlignmentFlag.AlignHCenter)
@@ -596,6 +622,12 @@ class TimeMasterWidget(QMainWindow):
         day_of_year = now.timetuple().tm_yday
         year_progress = (day_of_year - 1 + day_progress) / total_year_days
         self.year_row.set_row(self.t("year_row", n=total_year_days - day_of_year), year_progress)
+
+        if self.config.language == "en":
+            self.title_label.setContentsMargins(0, 0, 0, 3)
+        else:
+            self.title_label.setContentsMargins(0, 0, 0, 0)
+        self._apply_en_main_content_horizontal_nudge(self.config.language == "en")
 
     def contextMenuEvent(self, event) -> None:  # noqa: N802
         menu = QMenu(self)
