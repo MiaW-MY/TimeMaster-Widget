@@ -202,9 +202,15 @@ class TimeMasterWidget(QMainWindow):
                 self._idx_stretch_bottom = self.card_layout.count() - 1
             self.card_layout.setStretch(self._idx_stretch_bottom, 1)
 
-    def _apply_language_layout(self) -> None:
+    def _sync_card_layout_margins(self) -> None:
+        """Main-only EN nudge must not apply to focus/celebration (same card_layout, different visual center)."""
         layout = LANGUAGE_LAYOUTS.get(self.config.language, LANGUAGE_LAYOUTS["zh"])
-        self.card_layout.setContentsMargins(*layout["card_margins"])
+        now = datetime.now()
+        if self._post_focus_celebration or self._focus_active(now):
+            margins = layout["card_margins_centered"]
+        else:
+            margins = layout["card_margins_main"]
+        self.card_layout.setContentsMargins(*margins)
 
     def _set_main_rows_layout_alignment(self, horizontal: Qt.AlignmentFlag) -> None:
         self.card_layout.setAlignment(self.focus_body, horizontal)
@@ -221,7 +227,7 @@ class TimeMasterWidget(QMainWindow):
         return text.format(**kwargs) if kwargs else text
 
     def apply_language(self) -> None:
-        self._apply_language_layout()
+        self._sync_card_layout_margins()
         now = datetime.now()
         self.focus_interrupt_btn.setText(self.t("focus_interrupt"))
         if self._post_focus_celebration:
@@ -528,13 +534,17 @@ class TimeMasterWidget(QMainWindow):
     def refresh_rows(self) -> None:
         now = datetime.now()
         if self._post_focus_celebration:
+            self._sync_card_layout_margins()
             self._render_celebration(now)
             return
 
         self._maybe_complete_focus(now)
         if self._post_focus_celebration:
+            self._sync_card_layout_margins()
             self._render_celebration(now)
             return
+
+        self._sync_card_layout_margins()
 
         if self._focus_active(now):
             self.title_label.setContentsMargins(0, 0, 0, 0)
@@ -558,10 +568,10 @@ class TimeMasterWidget(QMainWindow):
 
             self.target_row.reset_row_style()
             self.target_row.set_label_point_size(15)
-            self.target_row.set_column_spacing(6)
+            self.target_row.set_column_spacing(10)
             self.target_row.set_row(self.t("focus_row", rem=rem), prog)
             self.target_row.set_bar_visible(True)
-            self.target_row.setContentsMargins(0, -4, 0, 0)
+            self.target_row.setContentsMargins(0, 0, 0, 0)
 
             cw = CARD_CONTENT_W
             self.focus_body.setFixedWidth(cw)

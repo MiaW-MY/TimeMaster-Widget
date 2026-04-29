@@ -126,7 +126,14 @@ STRINGS = {
 }
 
 LANGUAGE_LAYOUTS = {
-    "zh": {"card_margins": (7, 9, 11, 4)},
-    # Left −5 / right +5 vs symmetric (10,*,10): same inner width, whole column shifts 5px left (EN text nudge).
-    "en": {"card_margins": (5, 16, 15, 1)},
+    # Main vs focus/celebration: EN uses asymmetric margins only on main (5px left nudge);
+    # centered modes use symmetric horizontal margins so HCenter stacks are visually centered.
+    "zh": {
+        "card_margins_main": (7, 9, 11, 4),
+        "card_margins_centered": (7, 9, 11, 4),
+    },
+    "en": {
+        "card_margins_main": (5, 16, 15, 1),
+        "card_margins_centered": (10, 16, 10, 1),
+    },
 }
