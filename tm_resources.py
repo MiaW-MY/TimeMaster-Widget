@@ -127,5 +127,6 @@ STRINGS = {
 
 LANGUAGE_LAYOUTS = {
     "zh": {"card_margins": (7, 9, 11, 4)},
-    "en": {"card_margins": (10, 16, 10, 1)},
+    # Left −5 / right +5 vs symmetric (10,*,10): same inner width, whole column shifts 5px left (EN text nudge).
+    "en": {"card_margins": (5, 16, 15, 1)},
 }
