@@ -160,8 +160,10 @@ class TimeMasterWidget(QMainWindow):
         self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
 
     def _style_title_label_celebration_nudge(self) -> None:
-        """Celebration only: shift completed title 4px left (does not affect main/focus title styling)."""
-        self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent; margin-left: -4px;")
+        """Celebration only: title 4px left; pull middle block up 10px via title margin (no negative focus_body margin — that clips row labels)."""
+        self.title_label.setStyleSheet(
+            f"color: {COL['text']}; background: transparent; margin-left: -4px; margin-bottom: -10px;"
+        )
 
     def _apply_celebration_tap_hint_appearance(self) -> None:
         """Celebration-only bottom hint: 11pt bold italic, nudged 2px down."""
@@ -351,18 +353,25 @@ class TimeMasterWidget(QMainWindow):
         self._post_focus_celebration = True
         self.card.fireworks.start_animation(freeze_on_end=True, burst_cy_ratio=0.34)
         self._stack_fireworks_below_celebration_content()
-        self.title_label.raise_()
-        for w in (self.focus_body, self.day_row, self.month_row, self.year_row):
-            w.raise_()
+        self._raise_celebration_text_and_tap_layers()
         self.focus_interrupt_btn.setVisible(False)
         self.card.tap_gate.set_pick_mode()
         self.card.tap_gate.show()
-        self.card.tap_gate.raise_()
+        self._raise_celebration_text_and_tap_layers()
 
     def _stack_fireworks_below_celebration_content(self) -> None:
-        """Particles must paint under text; never gate on isVisible (first frame can skip lower and cover copy)."""
+        """Particles under all copy; title stylesheet changes can reshuffle siblings, so restack after layout updates."""
         self.card.fireworks.lower()
-        self.card.fireworks.stackUnder(self.title_label)
+        self.card.fireworks.stackUnder(self.focus_body)
+
+    def _raise_celebration_text_and_tap_layers(self) -> None:
+        """Explicit z-order: content above fireworks, tap gate above content for clicks, hint on top (mouse-transparent)."""
+        self.title_label.raise_()
+        self.focus_body.raise_()
+        self.day_row.raise_()
+        self.month_row.raise_()
+        self.card.tap_gate.raise_()
+        self.celebration_tap_hint_label.raise_()
 
     def _render_celebration(self, now: datetime) -> None:
         self.focus_interrupt_btn.setVisible(False)
@@ -373,7 +382,7 @@ class TimeMasterWidget(QMainWindow):
         self._set_card_vertical_balance(True, top_ratio=1, bottom_ratio=1)
         self.card_layout.setSpacing(5)
         self._fb_layout.setSpacing(6)
-        self.focus_body.setContentsMargins(0, -10, 0, 0)
+        self.focus_body.setContentsMargins(0, 0, 0, 0)
         text_w = CARD_CONTENT_W
         self.focus_body.setFixedWidth(text_w)
         self.target_row.set_text_column_width(text_w)
@@ -418,17 +427,15 @@ class TimeMasterWidget(QMainWindow):
 
         self.year_row.setVisible(False)
 
+        self._style_title_label_celebration_nudge()
         self._stack_fireworks_below_celebration_content()
         self.celebration_tap_hint_label.setText(self.t("celebration_tap_hint"))
         self.celebration_tap_hint_label.setVisible(True)
         self._apply_celebration_tap_hint_appearance()
-        self.title_label.raise_()
-        for w in (self.focus_body, self.day_row, self.month_row):
-            w.raise_()
-        self.card.tap_gate.raise_()
-        self.celebration_tap_hint_label.raise_()
+        self._raise_celebration_text_and_tap_layers()
         self.card.tap_gate.update_pick_hint_geometry()
-        self._style_title_label_celebration_nudge()
+        self._stack_fireworks_below_celebration_content()
+        self._raise_celebration_text_and_tap_layers()
 
     def _format_focus_remaining(self, left_sec: int) -> str:
         lh, lr = divmod(int(left_sec), 3600)
