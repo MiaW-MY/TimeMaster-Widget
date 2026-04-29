@@ -160,8 +160,21 @@ class TimeMasterWidget(QMainWindow):
         self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent;")
 
     def _style_title_label_celebration_nudge(self) -> None:
-        """Shift 「Completed」 slightly left (~5px) via stylesheet margin."""
-        self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent; margin-left: -5px;")
+        """Celebration only: shift completed title 4px left (does not affect main/focus title styling)."""
+        self.title_label.setStyleSheet(f"color: {COL['text']}; background: transparent; margin-left: -4px;")
+
+    def _apply_celebration_tap_hint_appearance(self) -> None:
+        """Celebration-only bottom hint: 11pt bold italic, nudged 2px down."""
+        f = QFont("Helvetica Neue", 11, QFont.Weight.Bold)
+        f.setItalic(True)
+        self.celebration_tap_hint_label.setFont(f)
+        self.celebration_tap_hint_label.setStyleSheet(
+            f"color: {COL['muted']}; background: transparent; margin-top: 2px;"
+        )
+
+    def _reset_celebration_tap_hint_appearance(self) -> None:
+        self.celebration_tap_hint_label.setFont(QFont("Helvetica Neue", 9))
+        self.celebration_tap_hint_label.setStyleSheet(f"color: {COL['muted']}; background: transparent;")
 
     def _title_layout_profile(self) -> tuple[Qt.AlignmentFlag, Qt.AlignmentFlag]:
         """(card_layout alignment for title, title QLabel horizontal text alignment).
@@ -240,6 +253,7 @@ class TimeMasterWidget(QMainWindow):
         if self._post_focus_celebration:
             self._style_title_label_celebration_nudge()
             self.celebration_tap_hint_label.setText(self.t("celebration_tap_hint"))
+            self._apply_celebration_tap_hint_appearance()
         else:
             self._style_title_label_default()
 
@@ -273,6 +287,8 @@ class TimeMasterWidget(QMainWindow):
         self._post_focus_celebration = False
         self._celebration_session_sec = 0
         self.celebration_tap_hint_label.setVisible(False)
+        self.focus_body.setContentsMargins(0, 0, 0, 0)
+        self._reset_celebration_tap_hint_appearance()
         self._set_card_vertical_balance(False)
         self.card_layout.setSpacing(4)
         self._apply_title_slot_main()
@@ -352,6 +368,7 @@ class TimeMasterWidget(QMainWindow):
         self._set_card_vertical_balance(True, top_ratio=1, bottom_ratio=1)
         self.card_layout.setSpacing(5)
         self._fb_layout.setSpacing(6)
+        self.focus_body.setContentsMargins(0, -10, 0, 0)
         text_w = CARD_CONTENT_W
         self.focus_body.setFixedWidth(text_w)
         self.target_row.set_text_column_width(text_w)
@@ -400,6 +417,7 @@ class TimeMasterWidget(QMainWindow):
             self.card.fireworks.lower()
         self.celebration_tap_hint_label.setText(self.t("celebration_tap_hint"))
         self.celebration_tap_hint_label.setVisible(True)
+        self._apply_celebration_tap_hint_appearance()
         self.title_label.raise_()
         for w in (self.focus_body, self.day_row, self.month_row):
             w.raise_()
