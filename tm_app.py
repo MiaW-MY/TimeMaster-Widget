@@ -20,6 +20,7 @@ from tm_config import AppConfig, day_stats_for, load_focus_stats, read_config, r
 from tm_resources import (
     ASSET_MASCOT,
     ASSET_MASCOT_FALLBACK,
+    ASSET_MASCOT_GEMINI,
     BAR_W,
     CARD_CONTENT_W,
     CARD_H,
@@ -49,7 +50,7 @@ class TimeMasterWidget(QMainWindow):
         self._post_focus_celebration = False
         self._celebration_session_sec = 0
 
-        self.top_mascot = load_pixmap((ASSET_MASCOT, ASSET_MASCOT_FALLBACK), 31)
+        self.top_mascot = load_pixmap((ASSET_MASCOT_GEMINI, ASSET_MASCOT, ASSET_MASCOT_FALLBACK), 31)
 
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)

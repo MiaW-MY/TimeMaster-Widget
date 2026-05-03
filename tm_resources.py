@@ -1,5 +1,6 @@
 from qt_compat import resource_root
 
+ASSET_MASCOT_GEMINI = resource_root() / "assets" / "mascot_gemini.png"
 ASSET_MASCOT = resource_root() / "assets" / "mascot_cutout.png"
 ASSET_MASCOT_FALLBACK = resource_root() / "assets" / "mascot.png"
 
@@ -29,7 +30,7 @@ STRINGS = {
         "title": "时间大师",
         "title_focus": "专注中",
         "title_completed": "已完成",
-        "target_hint": "目标 右键「目标…」或双击设置",
+        "target_hint": "双击设定目标日",
         "target_done": "目标剩余 已到时间",
         "target_days": "距目标还剩 {d} 天",
         "day_row": "今日剩余 {hms}",
@@ -78,7 +79,7 @@ STRINGS = {
         "title": "Time Master",
         "title_focus": "Focus",
         "title_completed": "Completed",
-        "target_hint": "Target: right-click Target… or double-click",
+        "target_hint": "Set target(double click)",
         "target_done": "Target Done",
         "target_day": "{d} day left to target",
         "target_days": "{d} days left to target",

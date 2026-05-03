@@ -3,7 +3,7 @@ import random
 from datetime import datetime, timedelta
 
 from PySide6.QtCore import QRectF, Qt, Signal, QTimer
-from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPixmap
+from PySide6.QtGui import QColor, QFont, QGuiApplication, QPainter, QPainterPath, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QFrame,
@@ -24,6 +24,12 @@ from tm_resources import BAR_H, BAR_W, CARD_H, CARD_RADIUS, CARD_W, COL
 
 
 def load_pixmap(paths: tuple, max_width: int, crop_top: int = 0) -> QPixmap | None:
+    """Scale to max_width logical px; use primary screen DPR so drawing stays sharp on Hi-DPI."""
+    screen = QGuiApplication.primaryScreen()
+    dpr = float(screen.devicePixelRatio()) if screen is not None else 1.0
+    if dpr < 1.0:
+        dpr = 1.0
+    target_px = max(1, int(round(max_width * dpr)))
     for path in paths:
         if not path.is_file():
             continue
@@ -32,8 +38,18 @@ def load_pixmap(paths: tuple, max_width: int, crop_top: int = 0) -> QPixmap | No
             continue
         if 0 < crop_top < pixmap.height():
             pixmap = pixmap.copy(0, crop_top, pixmap.width(), pixmap.height() - crop_top)
-        return pixmap.scaledToWidth(max_width, Qt.TransformationMode.SmoothTransformation)
+        scaled = pixmap.scaledToWidth(target_px, Qt.TransformationMode.SmoothTransformation)
+        scaled.setDevicePixelRatio(dpr)
+        return scaled
     return None
+
+
+def pixmap_layout_size(pm: QPixmap) -> tuple[int, int]:
+    """Layout size in device-independent pixels (Qt: size / devicePixelRatio())."""
+    dpr = pm.devicePixelRatio()
+    if dpr <= 0:
+        dpr = 1.0
+    return int(round(pm.width() / dpr)), int(round(pm.height() / dpr))
 
 
 class ProgressBar(QWidget):
@@ -789,7 +805,11 @@ class CardFrame(QFrame):
         painter.setClipPath(path)
 
         if self.top_pixmap is not None:
+            pm = self.top_pixmap
+            lw, _lh = pixmap_layout_size(pm)
             painter.setOpacity(0.9)
-            painter.drawPixmap(self.width() - self.top_pixmap.width() - 4, 9, self.top_pixmap)
+            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+            # Use layout width, not pm.width(): after setDevicePixelRatio(), width() is buffer pixels.
+            painter.drawPixmap(self.width() - lw - 4, 9, pm)
 
         painter.setOpacity(1.0)
