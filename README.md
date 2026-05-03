@@ -112,7 +112,7 @@ This installs PyInstaller (see `requirements-dev.txt`) and writes `dist/Time Mas
 
 ### DMG for downloaders (drag to Applications)
 
-After the `.app` exists, build a compressed read-only **DMG** that contains **Time Master.app** and an **Applications** alias (common macOS install UX):
+After the `.app` exists, build an **uncompressed** read-only **DMG** that contains **Time Master.app** and an **Applications** alias (common macOS install UX). The image is not zlib-compressed (`UDRO`), so the `.dmg` file size reflects the payload without extra compression.
 
 ```bash
 ./scripts/build_dmg.sh

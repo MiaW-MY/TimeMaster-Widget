@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build a read-only compressed DMG with Time Master.app and an Applications alias (Tier B UX).
+# Build a read-only uncompressed DMG with Time Master.app and an Applications alias (Tier B UX).
 set -euo pipefail
 ROOT="$(cd -- "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -36,8 +36,7 @@ hdiutil create \
   -volname "Time Master" \
   -srcfolder "$STAGE" \
   -ov \
-  -format UDZO \
-  -imagekey zlib-level=9 \
+  -format UDRO \
   "$OUT"
 
 rm -rf "$STAGE"
