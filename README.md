@@ -110,13 +110,25 @@ This installs PyInstaller (see `requirements-dev.txt`) and writes `dist/Time Mas
 
 **Code signing / Gatekeeper:** unsigned local builds may trigger “cannot be opened” until you allow them in **System Settings → Privacy & Security**, or you sign the app with your Apple Developer ID when you are ready to distribute.
 
+### DMG for downloaders (drag to Applications)
+
+After the `.app` exists, build a compressed read-only **DMG** that contains **Time Master.app** and an **Applications** alias (common macOS install UX):
+
+```bash
+./scripts/build_dmg.sh
+```
+
+Output: `dist/Time-Master-<version>.dmg` (version from `git describe --tags --always`, or set `VERSION=1.0.0`). If `dist/Time Master.app` is missing, the script runs `build_mac_app.sh` first.
+
+Release checklist and copy-paste user steps: **English** `docs/release.en.md`, **中文** `docs/release.zh-CN.md`.
+
 ## Continuing product development
 
 Typical iteration loop:
 
 1. **Clone / branch** — work on `main` or a feature branch; commit small, reviewable changes.
 2. **Dev environment** — keep a project virtualenv (`.venv`), `pip install -r requirements.txt`, run `python3 time_master.py` for fast reload during UI work.
-3. **Rebuild the .app** — after meaningful releases, run `./scripts/build_mac_app.sh` again and replace the copy in Applications (or bump a version label in your own release notes).
+3. **Rebuild the .app / DMG** — after meaningful releases, run `./scripts/build_mac_app.sh` and optionally `./scripts/build_dmg.sh`, then attach the DMG to a GitHub Release (see `docs/release.en.md`).
 4. **User data** — while developing from source, config still lives next to the repo (see below). The standalone app uses Application Support; copy files between those locations if you need to migrate manually.
 
 ## Local Config
@@ -154,6 +166,7 @@ Required image assets live in `assets/` and are committed to the repository beca
 - `qt_compat.py`: Qt import compatibility, resource vs data paths (dev vs bundled app)
 - `assets/`: runtime images and `AppIcon.icns` (standalone app icon)
 - `scripts/build_mac_app.sh`: builds `dist/Time Master.app` with PyInstaller
+- `scripts/build_dmg.sh`: builds `dist/Time-Master-<version>.dmg` (`.app` + Applications alias)
 - `scripts/make_app_icon.py`: regenerates `AppIcon.icns` from `assets/app_icon_1024.png`
 - `docs/`: bilingual project documentation
 
