@@ -1,6 +1,20 @@
 # macOS
 .DS_Store
 
+# Local-only documentation (not committed; will not appear on GitHub)
+# Tracked `docs/*.md` (except ignored paths) and `docs/images/` stay in the repo; patterns below are for local extras only.
+docs/known-issues.md
+docs/usage.en.md
+docs/usage.zh-CN.md
+docs/release.en.md
+docs/release.zh-CN.md
+docs/private/
+docs/scratch/
+docs/**/*.local.md
+docs/**/*.draft.md
+# Local layout reference screenshots (optional; not tracked — use docs/private/ if you need them)
+docs/reference-main-layout-*.png
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

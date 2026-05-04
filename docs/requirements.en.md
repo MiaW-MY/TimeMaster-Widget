@@ -66,7 +66,7 @@ The project is currently optimized for personal use, but the codebase has alread
 - Further tune Chinese and English layouts
 - Add more color themes
 - Add more size variants
-- Add app packaging or `.app` distribution
+- Improve DMG distribution (signing, notarization, release polish)
 - Move runtime config into a more standard app-specific local directory
 - Improve screenshots, demo materials, and public-repo polish
 
