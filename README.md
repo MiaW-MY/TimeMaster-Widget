@@ -2,13 +2,13 @@
 
 A small **macOS** desktop widget that stays on top of your windows: countdown to a **target date**, **today / month / year** progress, optional **Focus** sessions with a short celebration when you finish, and a **Statistics** window for the last 30 days. Interface is available in **English** and **Chinese**.
 
-**Using the app:** [Install from a release](#install-from-github-releases-dmg-or-app) · [Screenshots](#screenshots) · [What it does](#what-it-does)
+**Using the app:** [Install from a release](#install-from-github-releases-dmg-or-app) · [Product Snapshots](#product-snapshots) · [What it does](#what-it-does)
 
 **Developing or building from source:** [Clone & run](#clone-and-run-from-source) · [Build & publish](#build-and-publish) · [Project layout](#project-layout)
 
 ---
 
-## Screenshots
+## Product Snapshots
 
 ### Target date and menu
 
