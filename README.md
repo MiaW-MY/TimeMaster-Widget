@@ -1,47 +1,58 @@
-# TimeMaster-Widget
+# Time Master
 
-A PySide6-based floating desktop countdown widget for macOS, with bilingual UI, opacity control, custom target date, optional focus sessions with fireworks on completion, per-day focus statistics, and cat-themed card styling.
 A small **macOS** desktop widget that stays on top of your windows: countdown to a **target date**, **today / month / year** progress, optional **Focus** sessions with a short celebration when you finish, and a **Statistics** window for the last 30 days. Interface is available in **English** and **Chinese**.
 
-**Quick links:** [Release install](#release-install-dmg-or-app) · [Run from source](#run-from-source) · [Documentation](#documentation) · [Build & publish](#build-and-publish) · [Local config](#local-config-from-source) · [Project layout](#project-layout)
+**Using the app:** [Install from a release](#install-from-github-releases-dmg-or-app) · [Screenshots](#screenshots) · [What it does](#what-it-does)
+
+**Developing or building from source:** [Clone & run](#clone-and-run-from-source) · [Build & publish](#build-and-publish) · [Project layout](#project-layout)
+
+---
 
 ## Screenshots
 
-### Chinese
+### Target date and menu
 
-![Chinese widget screenshot](docs/images/screenshot-zh.png)
+Right-click the card for **Target…**, **Focus…**, **Appearance…**, **Statistics…**, language, and quit. The **Target** window sets start and end dates; choose **Save** to apply.
 
-### English
+![Main card with menu and Target window](docs/images/readme-main-target-settings.png)
 
-![English widget screenshot](docs/images/screenshot-en.png)
+### Focus, completion, and statistics
 
-## Features
+Start a **Focus** session from the menu; when time is up you see **Completed** with a short celebration, then continue. **Focus statistics** lists the last 30 days (duration and session counts).
 
-- Floating always-on-top countdown card
-- Chinese and English UI
-- Custom target date with persistent local config
-- Focus timer (minutes or hours) from settings; fireworks on successful completion
-- Right-click Statistics window for the last 30 days (duration and session counts)
-- Opacity adjustment
-- Rounded card layout with a decorative cat asset
+![Focus timer, Completed screen, and Focus statistics window](docs/images/readme-focus-completion-stats.png)
 
-## Release install (DMG or app)
+---
 
-For **people who only downloaded a build** from GitHub Releases (not the source tree).
+## What it does
 
-1. Open the **`.dmg`**, drag **Time Master** into **Applications**, eject the disk image, then launch from **Applications** or Launchpad.
-2. **Settings and focus stats** live under  
+- Floating, always-on-top card you can drag anywhere  
+- **Target date** and four progress lines (target / today / month / year)  
+- **Focus** timer (minutes or hours); optional fireworks when a session completes  
+- **Statistics** for recent focus time, from the right-click menu  
+- **Opacity** and **language** from settings  
+
+---
+
+## Install from GitHub Releases (DMG or app)
+
+For anyone who **downloads a build** (you do not need the source code).
+
+1. Open the **`.dmg`**, drag **Time Master** into **Applications**, eject the disk image, then open the app from **Applications** or Launchpad.  
+2. Your **settings and focus data** are stored here (not inside the app file):  
    `~/Library/Application Support/TimeMaster-Widget/`  
-   (`time_master_config.py` and `time_master_focus_stats.json`), not inside the app bundle.
-3. **First open:** if macOS blocks an unidentified developer, use **System Settings → Privacy & Security** once, or right-click the app → **Open**.
+   (`time_master_config.py` and `time_master_focus_stats.json`).  
+3. **First launch:** if macOS says the app is from an unidentified developer, open **System Settings → Privacy & Security** and allow it once, or **right-click the app → Open**.
 
-## Run from source
+---
 
-For **developers** (or anyone with a `git clone`) running with a virtualenv, not the packaged `.app`.
+## Clone and run from source
 
-**Requirements:** Python 3.10+, macOS.
+For **developers** who use `git clone` and run with Python (not the packaged `.app`).
 
-Use Terminal **inside the project folder** (must contain `requirements.txt` and `time_master.py`). Run `pwd` and `ls requirements.txt` before creating `.venv`.
+**Requirements:** macOS, Python 3.10+.
+
+In Terminal, go to the folder that contains `requirements.txt` and `time_master.py` (check with `pwd` and `ls requirements.txt`).
 
 ```bash
 git clone <your-repo-url>
@@ -53,19 +64,19 @@ cp time_master_config.example.py time_master_config.py
 python3 time_master.py
 ```
 
-Later: `cd` to the project, `source .venv/bin/activate`, then `python3 time_master.py`.
+Next time: `cd` to the project, `source .venv/bin/activate`, then `python3 time_master.py`.
 
-### Detach from Terminal (optional)
-
-To keep the widget running **after you close Terminal**, from the project directory:
+### Run without keeping Terminal open (optional)
 
 ```bash
 cd /path/to/TimeMaster-Widget
-./start_time_master.command   # background; uses .run/
+./start_time_master.command   # runs in background; uses .run/
 ./stop_time_master.command    # stop
 ```
 
 Or double-click those `.command` files in Finder.
+
+---
 
 ## Documentation
 
@@ -74,25 +85,27 @@ Or double-click those `.command` files in Finder.
 | Requirements | [`docs/requirements.en.md`](docs/requirements.en.md) | [`docs/requirements.zh-CN.md`](docs/requirements.zh-CN.md) |
 | Architecture | [`docs/architecture.en.md`](docs/architecture.en.md) | [`docs/architecture.zh-CN.md`](docs/architecture.zh-CN.md) |
 
-Personal or local-only notes (`docs/usage.*`, `docs/release.*`, `docs/known-issues.md`, `docs/private/`, etc.) are listed in [`.gitignore`](.gitignore) and are not pushed to GitHub.
+Some personal notes under `docs/` are listed in [`.gitignore`](.gitignore) and are not part of the public repository.
+
+---
 
 ## Build and publish
 
-For **maintainers** who produce the **`.app` / DMG** and attach them to **GitHub Releases**. Download-only users can skip this.
+For **maintainers** who create the **`.app` / DMG** and upload to **GitHub Releases**.
 
-Use the **same venv** as in [Run from source](#run-from-source) (`source .venv/bin/activate`, dependencies installed). From the project root:
+From the project root, with the same virtualenv as above (`source .venv/bin/activate` and dependencies installed):
 
 ```bash
 ./scripts/build_mac_app.sh
 ```
 
-Writes `dist/Time Master.app` via PyInstaller (see `requirements-dev.txt`).
+Produces `dist/Time Master.app` (PyInstaller; see `requirements-dev.txt`).
 
-**Common mistake:** creating `.venv` in `$HOME` instead of the repo — remove `~/.venv` if needed, then `cd` into the project and create `.venv` again.
+**Tip:** If you accidentally created `.venv` in your home folder, remove `~/.venv` and create `.venv` again **inside** the project after `cd`.
 
-**App icon:** `assets/AppIcon.icns` from `assets/app_icon_1024.png`. Prefer a **square** 1024×1024 with no thick empty margin; run `python3 scripts/make_app_icon.py` after `pip install -r requirements-dev.txt`, then rebuild the app.
+**App icon:** `assets/AppIcon.icns` from `assets/app_icon_1024.png`. Use a roughly **1024×1024** square icon without a huge empty margin; run `python3 scripts/make_app_icon.py` (after `pip install -r requirements-dev.txt`), then rebuild.
 
-**Gatekeeper:** unsigned builds may need **Privacy & Security** (or right-click → **Open**) until you code-sign for distribution.
+**Gatekeeper:** unsigned builds may need **Privacy & Security** or **right-click → Open** until you code-sign.
 
 ### DMG
 
@@ -100,34 +113,36 @@ Writes `dist/Time Master.app` via PyInstaller (see `requirements-dev.txt`).
 ./scripts/build_dmg.sh
 ```
 
-Uncompressed read-only DMG (`UDRO`) with the **`.app`** and an **Applications** alias → `dist/Time-Master-<version>.dmg` (`git describe` or `VERSION=1.0.0 ./scripts/build_dmg.sh`). Builds the `.app` first if missing.
+Creates `dist/Time-Master-<version>.dmg` (uncompressed `UDRO` image with the app and an **Applications** shortcut). Version comes from `git describe` or e.g. `VERSION=1.0.0 ./scripts/build_dmg.sh`. Builds the `.app` first if it is missing.
 
 ### Ship on GitHub
 
-1. Commit and push.
-2. `git tag v1.0.0 && git push origin v1.0.0` (your version).
-3. **Releases → Draft a new release** → choose tag → attach `dist/Time-Master-*.dmg`.
-4. In the description: **macOS version tested**, **Apple Silicon vs Intel** for the build host, and short steps for downloaders (same ideas as [Release install](#release-install-dmg-or-app)).
+1. Commit and push.  
+2. `git tag v1.0.0 && git push origin v1.0.0` (use your version).  
+3. **Releases → Draft a new release** → select the tag → attach `dist/Time-Master-*.dmg`.  
+4. In the release text, say which **macOS** you tested, **Apple Silicon vs Intel** for the build machine, and repeat the short **install steps** from [Install from GitHub Releases](#install-from-github-releases-dmg-or-app).
 
-**Day-to-day:** branch on `main`, iterate with `python3 time_master.py`, then rebuild and attach DMG when you cut a release. Config while developing lives next to the repo; the packaged app uses Application Support — copy files manually if you migrate between the two.
+---
 
 ## Local config (from source)
 
-From a **clone**, settings are in `time_master_config.py` (ignored by Git):
+When running from a clone, settings live in `time_master_config.py` (not committed to Git):
 
 ```bash
 cp time_master_config.example.py time_master_config.py
 ```
 
-Fields: `LANGUAGE`, `WIDGET_ALPHA`, `TARGET_ISO`, `COUNTDOWN_START_ISO`, `FOCUS_DURATION_SECONDS`, `FOCUS_STARTED_ISO` (see `time_master_config.example.py` for shapes).
+Fields include `LANGUAGE`, `WIDGET_ALPHA`, `TARGET_ISO`, `COUNTDOWN_START_ISO`, `FOCUS_DURATION_SECONDS`, `FOCUS_STARTED_ISO` — see `time_master_config.example.py`.
 
-Focus stats: `time_master_focus_stats.json` in the project directory (ignored). **Packaged app:** both paths are under `~/Library/Application Support/TimeMaster-Widget/` — see [Release install](#release-install-dmg-or-app).
+Focus stats: `time_master_focus_stats.json` next to the repo (ignored by Git). The **installed app** uses `~/Library/Application Support/TimeMaster-Widget/` instead.
+
+---
 
 ## Project layout
 
-- **`assets/`** — committed images and `AppIcon.icns` loaded at runtime.
-- **`time_master.py`** — entry; **`tm_app.py`** / **`tm_ui.py`** / **`tm_config.py`** / **`tm_resources.py`** / **`qt_compat.py`** — app, UI, config, constants, Qt paths.
-- **`scripts/build_mac_app.sh`** — `dist/Time Master.app`; **`scripts/build_dmg.sh`** — DMG; **`scripts/make_app_icon.py`** — refresh `AppIcon.icns`.
-- **`docs/`** — in-repo **requirements** + **architecture**; other doc filenames are gitignored for local use (see [Documentation](#documentation)).
+- **`assets/`** — images and `AppIcon.icns` used at runtime.  
+- **`time_master.py`** — entry point. **`tm_app.py`**, **`tm_ui.py`**, **`tm_config.py`**, **`tm_resources.py`**, **`qt_compat.py`** — app logic, widgets, config, strings/constants, Qt paths.  
+- **`scripts/build_mac_app.sh`**, **`scripts/build_dmg.sh`**, **`scripts/make_app_icon.py`** — packaging and icon refresh.  
+- **`docs/`** — public **requirements** and **architecture**; other local doc paths are gitignored.
 
-macOS-only; standard `pip` workflow (no committed `.pyside6_vendor/`). Do not commit `time_master_config.py` or personal stats files.
+Built with **PySide6** on macOS; standard **pip** workflow. Do not commit `time_master_config.py` or personal statistics files.
