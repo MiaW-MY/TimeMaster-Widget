@@ -4,7 +4,7 @@ A small **macOS** desktop widget that stays on top of your windows: countdown to
 
 **Using the app:** [Install from a release](#install-from-github-releases-dmg-or-app) · [Product Snapshots](#product-snapshots) · [What it does](#what-it-does)
 
-**Developing or building from source:** [Clone & run](#clone-and-run-from-source) · [Build & publish](docs/release.en.md) ([中文](docs/release.zh-CN.md)) · [Project layout](#project-layout)
+**Developing or building from source:** [Clone & run](#clone-and-run-from-source) · [Build & publish](#build-and-publish) · [Project layout](#project-layout)
 
 ---
 
@@ -84,9 +84,39 @@ Or double-click those `.command` files in Finder.
 |-------|---------|------|
 | Requirements | [`docs/requirements.en.md`](docs/requirements.en.md) | [`docs/requirements.zh-CN.md`](docs/requirements.zh-CN.md) |
 | Architecture | [`docs/architecture.en.md`](docs/architecture.en.md) | [`docs/architecture.zh-CN.md`](docs/architecture.zh-CN.md) |
-| Build & publish (`.app` / DMG / Releases) | [`docs/release.en.md`](docs/release.en.md) | [`docs/release.zh-CN.md`](docs/release.zh-CN.md) |
 
-Some personal paths under `docs/` (`usage.*`, `known-issues.md`, `private/`, etc.) are listed in [`.gitignore`](.gitignore) and are not part of the public repository.
+Local-only paths under `docs/` (`release.*`, `usage.*`, `known-issues.md`, `private/`, etc.) are listed in [`.gitignore`](.gitignore) and are not pushed to GitHub. You can keep a private **`docs/release.en.md` / `docs/release.zh-CN.md`** on disk for a longer maintainer checklist.
+
+---
+
+## Build and publish
+
+For **maintainers** who build the **`.app` / DMG** and upload to **GitHub Releases**. From the repo root with `.venv` activated (`pip install -r requirements.txt` already done):
+
+```bash
+./scripts/build_mac_app.sh
+```
+
+Writes **`dist/Time Master.app`** (PyInstaller; see `requirements-dev.txt`). If `.venv` was created in `$HOME` by mistake, remove `~/.venv` and recreate `.venv` **inside** the project.
+
+**App icon:** `assets/AppIcon.icns` from `assets/app_icon_1024.png` (~1024×1024 square, minimal empty margin). Refresh: `python3 scripts/make_app_icon.py` (after `pip install -r requirements-dev.txt`), then rebuild.
+
+**Gatekeeper:** unsigned builds may need **Privacy & Security** or **right-click → Open** until you code-sign.
+
+### DMG
+
+```bash
+./scripts/build_dmg.sh
+```
+
+Creates **`dist/Time-Master-<version>.dmg`** (uncompressed `UDRO`, app + **Applications** alias). Version from `git describe` or e.g. `VERSION=1.0.0 ./scripts/build_dmg.sh`. Builds the `.app` first if missing.
+
+### Ship on GitHub
+
+1. Commit and push.  
+2. `git tag v1.0.0 && git push origin v1.0.0` (your version).  
+3. **Releases → Draft a new release** → pick the tag → attach **`dist/Time-Master-*.dmg`**.  
+4. In the release text: **macOS** tested, **Apple Silicon vs Intel** build host, and short **install steps** (same as [Install from GitHub Releases](#install-from-github-releases-dmg-or-app)).
 
 ---
 
@@ -109,6 +139,6 @@ Focus stats: `time_master_focus_stats.json` next to the repo (ignored by Git). T
 - **`assets/`** — images and `AppIcon.icns` used at runtime.  
 - **`time_master.py`** — entry point. **`tm_app.py`**, **`tm_ui.py`**, **`tm_config.py`**, **`tm_resources.py`**, **`qt_compat.py`** — app logic, widgets, config, strings/constants, Qt paths.  
 - **`scripts/build_mac_app.sh`**, **`scripts/build_dmg.sh`**, **`scripts/make_app_icon.py`** — packaging and icon refresh.  
-- **`docs/`** — **requirements**, **architecture**, and **release** (build / DMG / GitHub); other local doc paths are gitignored.
+- **`docs/`** — public **requirements** and **architecture**; optional local **`docs/release.*`** / **`usage.*`** / etc. (see [`.gitignore`](.gitignore)).
 
 Built with **PySide6** on macOS; standard **pip** workflow. Do not commit `time_master_config.py` or personal statistics files.

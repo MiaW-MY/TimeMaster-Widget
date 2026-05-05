@@ -3,10 +3,11 @@
 
 # Local-only documentation (not committed; will not appear on GitHub)
 # Tracked `docs/*.md` (except paths listed below) and `docs/images/` stay in the repo.
-# NOTE: docs/release.en.md and docs/release.zh-CN.md are NOT ignored — keep them out of this block.
 docs/known-issues.md
 docs/usage.en.md
 docs/usage.zh-CN.md
+docs/release.en.md
+docs/release.zh-CN.md
 docs/private/
 docs/scratch/
 docs/**/*.local.md
