@@ -73,7 +73,7 @@ STRINGS = {
         "celebration_completed": "已专注 {dur}",
         "celebration_praise": "太棒了！",
         "celebration_today_sub": "今日累计 {today}",
-        "celebration_tap_hint": "轻触继续",
+        "celebration_tap_hint": "点击继续",
     },
     "en": {
         "title": "Time Master",
@@ -125,7 +125,7 @@ STRINGS = {
         "celebration_completed": "Focused for {dur}",
         "celebration_praise": "Nice work!",
         "celebration_today_sub": "Today {today}",
-        "celebration_tap_hint": "Tap to continue",
+        "celebration_tap_hint": "Click to continue",
     },
 }
 
